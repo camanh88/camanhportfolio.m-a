@@ -77,10 +77,10 @@ const again = variant === 'finale' ? ui['music again'] : '';
     const seen = () => { try { return !!localStorage.getItem(HINT); } catch { return false; } };
     const markSeen = () => { if (!btn.dataset.again) { try { localStorage.setItem(HINT, '1'); } catch { /* ignore */ } } hint?.classList.remove('on'); btn.classList.remove('nudge'); };
     if (hint && btn.dataset.again) {   // page 04: always remind the visitor to start this page's music
-      setTimeout(() => { hint.classList.add('on'); btn.classList.add('nudge'); }, 1200);
+      setTimeout(() => { hint.classList.add('on'); btn.classList.add('nudge'); }, 0);
       setTimeout(() => hint.classList.remove('on'), 12000);
     } else if (hint && !read().on) {   // pages 01-03: the same reminder on every page, unless the music is already playing
-      setTimeout(() => { hint.classList.add('on'); btn.classList.add('nudge'); }, 1200);
+      setTimeout(() => { hint.classList.add('on'); btn.classList.add('nudge'); }, 0);
       setTimeout(() => hint.classList.remove('on'), 12000);
     }
 

@@ -28,6 +28,8 @@ You already cherish Vietnamese ingredients and let the seasons lead. With your d
 
 I cherish that too: the variety and quality of Vietnamese ingredients, and the care and rigor it takes to work with them.
 
+_Image sources: MÙA_
+
 ### Connect nature with culture
 
 Lam Yên found its way into how Hanoians enjoy treats and give gifts.

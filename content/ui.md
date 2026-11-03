@@ -33,5 +33,7 @@ BUILD NOTE: Tiny words the site needs that are not part of any chapter (buttons,
 
 - music play: Play music
 - music pause: Pause music
-- music youtube: BBz7-F9mdUE
+- music youtube: w4s__g3Ac8A
+- music youtube 04: YIGfrpE7aj0
+- music again: This page has its own music: play it again
 - music hint: For a better experience

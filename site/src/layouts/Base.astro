@@ -95,7 +95,7 @@ const desc = `${textOf(cover.hero)} ${textOf(cover.sub)}`;
       </div>
     )}
     <Footer />
-    <Music />
+    <Music variant={Astro.props.current === 'mua' ? 'finale' : 'main'} />
     <ReviewNote />
 
     <dialog id="sp" class="sp-dialog" aria-labelledby="sp-title" data-soon={ui['coming soon']}>

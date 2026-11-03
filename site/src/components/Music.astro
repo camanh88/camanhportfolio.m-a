@@ -1,21 +1,26 @@
 ---
-// Background music: one track for the whole site (Cam Anh, Oct 27). Off by default (browsers do not allow sound without a click).
+// Background music: one track for pages 01-03 and another for page 04 (Cam Anh, Nov 3).
+// Previously: one track for the whole site (Cam Anh, Oct 27). Off by default (browsers do not allow sound without a click).
 // Put the track at public/audio/music.mp3; until it is there, nothing is shown. The labels come from content/ui.md.
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { ui } from '../lib/data';
+interface Props { variant?: 'main' | 'finale' }
+const { variant = 'main' } = Astro.props;
 const file = ['music.mp3', 'music.m4a'].find((f) => existsSync(path.resolve(process.cwd(), 'public', 'audio', f)));
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 // no file yet: Cam Anh's chosen track plays through YouTube's own embedded player (content/ui.md, key "music youtube")
-const yt = file ? '' : (ui['music youtube'] ?? '').trim();
+// pages 01-03 play the main track; page 04 has its own and reminds the visitor to press play again
+const yt = file ? '' : (variant === 'finale' ? ui['music youtube 04'] : ui['music youtube'] ?? '').trim();
+const again = variant === 'finale' ? ui['music again'] : '';
 ---
 {(file || yt) && (
-  <button type="button" class="mu" data-music data-src={file ? `${base}audio/${file}` : ''} data-yt={yt} data-play={ui['music play']} data-pause={ui['music pause']} aria-pressed="false" aria-label={ui['music play']} title={ui['music play']}>
+  <button type="button" class="mu" data-music data-src={file ? `${base}audio/${file}` : ''} data-yt={yt} data-again={again} data-play={ui['music play']} data-pause={ui['music pause']} aria-pressed="false" aria-label={ui['music play']} title={ui['music play']}>
     <span class="mu-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     <svg class="mu-off" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 18V6l10-2v12M9 18a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zm10-2a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path class="mu-slash" d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
   </button>
 )}
-{(file || yt) && <p class="mu-hint" id="mu-hint" aria-hidden="true"><span>{ui['music hint']}</span><i>↘</i></p>}
+{(file || yt) && <p class="mu-hint" id="mu-hint" aria-hidden="true"><span>{again || ui['music hint']}</span><i>↘</i></p>}
 {yt && <div class="mu-card" id="mu-card" aria-hidden="true"><div id="mu-yt"></div></div>}
 
 <style is:global>
@@ -31,13 +36,15 @@ const yt = file ? '' : (ui['music youtube'] ?? '').trim();
   .mu[aria-pressed="false"] .mu-off { display: block; }
   .sp-open .mu, .sp-open .mu-hint { display: none; }
   /* a quiet hint, shown once, until the visitor presses the music button */
-  .mu-hint { position: fixed; z-index: 59; right: 1.1rem; bottom: 4.5rem; margin: 0; display: flex; align-items: flex-end; gap: .35rem; padding: .3rem .85rem .35rem; border-radius: 999px; background: rgb(238 233 193 / .86); color: #8a857e; font-family: var(--display); font-style: italic; font-size: .98rem; line-height: 1.2; pointer-events: none; opacity: 0; transform: translateY(.4rem); transition: opacity 1s var(--ease), transform 1s var(--ease); }
+  .mu-hint { position: fixed; z-index: 59; right: 1.1rem; bottom: 4.5rem; margin: 0; display: flex; align-items: flex-end; gap: .35rem; padding: .3rem .85rem .35rem; border-radius: 999px; background: rgb(238 233 193 / .86); color: var(--ink-soft); font-family: var(--display); font-style: italic; font-size: .98rem; line-height: 1.2; pointer-events: none; opacity: 0; transform: translateY(.4rem); transition: opacity 1s var(--ease), transform 1s var(--ease); }
   .mu-hint.on { opacity: 1; transform: none; }
+  .mu.nudge { animation: munudge 1.6s ease-in-out 5; }
+  @keyframes munudge { 0%, 100% { box-shadow: 0 0 0 0 rgb(164 83 12 / .5); } 50% { box-shadow: 0 0 0 .7rem rgb(164 83 12 / 0); } }
   .mu-hint i { font-style: normal; font-family: var(--sans); font-size: 1.05rem; line-height: 1; }
   /* YouTube's player is kept out of sight: it only carries the sound (Cam Anh's choice) */
   .mu-card { position: fixed; z-index: -1; right: 0; bottom: 0; width: 200px; height: 200px; opacity: 0; pointer-events: none; overflow: hidden; }
   .mu-card iframe { display: block; width: 200px; height: 200px; border: 0; }
-  @media (prefers-reduced-motion: reduce) { .mu .mu-bars i { animation: none; height: 70%; } }
+  @media (prefers-reduced-motion: reduce) { .mu .mu-bars i { animation: none; height: 70%; } .mu.nudge { animation: none; } }
 </style>
 
 <script>
@@ -50,10 +57,12 @@ const yt = file ? '' : (ui['music youtube'] ?? '').trim();
   if (btn) {
     const KEY = 'port26-music', HINT = 'port26-music-hint';
     type Engine = { start(): Promise<boolean>; pause(): void; resume(): void; vol(v?: number): number; time(): number };
-    const read = (): { on?: boolean; t?: number } => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
+    const track = btn.dataset.src || btn.dataset.yt || '';
+    // what was left playing on the previous page counts only if it is the same track (page 04 has its own track)
+    const read = (): { on?: boolean; t?: number; trk?: string } => { try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); return s.trk === track ? s : {}; } catch { return {}; } };
     const resumeAt = read().on ? (read().t || 0) : 0;   // a track that was left playing on the previous page goes on; otherwise it starts from the beginning
     let eng: Engine | null = null, wanted = false, startP: Promise<boolean> | null = null, fade = 0;
-    const write = () => { try { localStorage.setItem(KEY, JSON.stringify({ on: wanted, t: eng?.time() || read().t || 0 })); } catch { /* storage may be blocked */ } };
+    const write = () => { try { localStorage.setItem(KEY, JSON.stringify({ on: wanted, t: eng?.time() || read().t || 0, trk: track })); } catch { /* storage may be blocked */ } };
     const label = () => { const t = wanted ? btn.dataset.pause! : btn.dataset.play!; btn.setAttribute('aria-pressed', String(wanted)); btn.setAttribute('aria-label', t); btn.title = t; };
     const GAIN = 0.45;
     const ramp = (to: number, ms: number, done?: () => void) => {
@@ -66,8 +75,11 @@ const yt = file ? '' : (ui['music youtube'] ?? '').trim();
     // ---- the hint ----
     const hint = document.getElementById('mu-hint');
     const seen = () => { try { return !!localStorage.getItem(HINT); } catch { return false; } };
-    const markSeen = () => { try { localStorage.setItem(HINT, '1'); } catch { /* ignore */ } hint?.classList.remove('on'); };
-    if (hint && !seen() && !read().on) { setTimeout(() => hint.classList.add('on'), 1800); setTimeout(markSeen, 14000); }
+    const markSeen = () => { if (!btn.dataset.again) { try { localStorage.setItem(HINT, '1'); } catch { /* ignore */ } } hint?.classList.remove('on'); btn.classList.remove('nudge'); };
+    if (hint && btn.dataset.again) {   // page 04: always remind the visitor to start this page's music
+      setTimeout(() => { hint.classList.add('on'); btn.classList.add('nudge'); }, 1200);
+      setTimeout(() => hint.classList.remove('on'), 12000);
+    } else if (hint && !seen() && !read().on) { setTimeout(() => hint.classList.add('on'), 1800); setTimeout(markSeen, 14000); }
 
     // ---- engine 1: a sound file ----
     const fileEngine = (src: string): Engine => {

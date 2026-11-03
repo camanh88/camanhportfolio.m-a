@@ -2,7 +2,7 @@
 
 Hi Mùa, I’m Cẩm Anh.
 
-A F&B marketer who’s in love with Vietnamese culture and craftsmanship.
+An F&B marketer who’s in love with Vietnamese culture and craftsmanship.
 
 Application · Brand & Marketing Manager
 

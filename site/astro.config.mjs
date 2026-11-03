@@ -1,5 +1,5 @@
 import { defineConfig } from 'astro/config';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, utimesSync } from 'node:fs';
 import path from 'node:path';
 
 // Dev only: the review sticky note saves a copy of its text to site/review-note.md (git-ignored), so Claude can read it.
@@ -23,9 +23,23 @@ const reviewNote = {
   },
 };
 
+// Dev only: the words live in ../content/*.md and are read once by src/lib/data.ts, so the dev server would keep showing old text.
+// When a .md file changes, touch data.ts: the server then reloads it and the open page refreshes by itself.
+const contentWatch = {
+  name: 'content-watch',
+  configureServer(server) {
+    const dir = path.resolve('..', 'content');
+    const data = path.resolve('src', 'lib', 'data.ts');
+    server.watcher.add(dir);
+    server.watcher.on('change', (file) => {
+      if (file.startsWith(dir) && file.endsWith('.md')) { const now = new Date(); utimesSync(data, now, now); }
+    });
+  },
+};
+
 export default defineConfig({
   site: 'https://mua-placeholder.example',
   output: 'static',
   devToolbar: { enabled: false },
-  vite: { plugins: [reviewNote] },
+  vite: { plugins: [reviewNote, contentWatch] },
 });

@@ -44,6 +44,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Photo from '../components/Photo.astro';
 import Music from '../components/Music.astro';
+import ReviewNote from '../components/ReviewNote.astro';
 import { cover, sidePages, ui, nav, pages, imageMeta } from '../lib/data';
 import { inline, textOf } from '../lib/md';
 import { SITE_URL, INDEXABLE } from '../lib/site';
@@ -95,6 +96,7 @@ const desc = `${textOf(cover.hero)} ${textOf(cover.sub)}`;
     )}
     <Footer />
     <Music />
+    <ReviewNote />
 
     <dialog id="sp" class="sp-dialog" aria-labelledby="sp-title" data-soon={ui['coming soon']}>
       <div class="sp-sheet">

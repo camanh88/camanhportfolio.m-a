@@ -43,6 +43,7 @@ const closeLines = closing.split(/,\s+/).map((l, i, a) => (i < a.length - 1 ? l 
 const contactP = text(secs['contact']);
 const contactLine = contactP[0] ?? '';
 const contactLabel = contactP[1] ?? '';
+const contactMore = contactP.slice(2);   // CV and portfolio: small links under the list
 const contactItems = (secs['contact'] ?? []).filter((b): b is Extract<Block, { t: 'ul' }> => b.t === 'ul').flatMap((b) => b.items);
 const contactHtml = inline(contactLine).replace(';)', '<span class="wink">;)</span>');
 const icons: Record<string, string> = {
@@ -167,6 +168,7 @@ const contactRow = (t: string) => {
           <ul class="ct-list">
             {contactItems.map((t) => <li set:html={contactRow(t)} />)}
           </ul>
+          {contactMore.length > 0 && <div class="ct-more label">{contactMore.map((t) => <p set:html={inline(t)} />)}</div>}
         </div>
         <div class="ct-road" aria-hidden="true">
           <svg class="end-hills" viewBox="0 0 1440 120" preserveAspectRatio="none"><path data-ct-hill d="M0,70 C140,40 260,30 400,58 C560,90 640,86 780,56 C920,26 1050,30 1180,56 C1290,78 1380,74 1440,56 L1440,120 L0,120 Z" /><path class="ct-dash" data-ct-line d="M0,70 C140,40 260,30 400,58 C560,90 640,86 780,56 C920,26 1050,30 1180,56 C1290,78 1380,74 1440,56" /></svg>
@@ -194,13 +196,13 @@ const contactRow = (t: string) => {
 
   /* ---------- 1. cheers ---------- */
   .cheers { --p: 0; position: relative; height: 270svh; background: var(--dark); color: var(--cream); }
-  .ch-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; grid-template-rows: auto 1fr; justify-items: center; padding: clamp(3.5rem, 11svh, 7rem) var(--pad) clamp(1.5rem, 6svh, 3.5rem); }
-  .ch-head { text-align: center; opacity: min(1, max(0, calc((var(--p) - .56) * 3.2))); transform: translateY(calc((1 - min(1, max(0, (var(--p) - .56) * 3.2))) * 2rem)); }
+  .ch-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; justify-items: center; padding: 0 var(--pad) clamp(2.2rem, 8svh, 4.5rem); align-content: end; }
+  .ch-head { position: absolute; left: 0; right: 0; top: clamp(4rem, 12svh, 7.5rem); padding: 0 var(--pad); text-align: center; opacity: min(1, max(0, calc((var(--p) - .56) * 3.2))); transform: translateY(calc((1 - min(1, max(0, (var(--p) - .56) * 3.2))) * 2rem)); }
   .ch-num { color: var(--sage); letter-spacing: .2em; }
   .ch-title { font-size: clamp(3rem, 10vw, 9.5rem); line-height: .86; letter-spacing: -.045em; font-weight: 300; margin-top: .5rem; max-width: 9ch; margin-inline: auto; text-wrap: balance; }
   /* t: how far the bottle has come (0 far away, 1 touching); k: after the touch */
   .ch-scene { --t: min(1, max(0, calc(var(--p) / .5))); --te: calc(var(--t) * (2 - var(--t))); --k: min(1, max(0, calc((var(--p) - .5) * 8)));
-    position: relative; width: min(100%, 46rem); height: min(60svh, 40rem); align-self: end; }
+    position: relative; width: min(100%, 46rem); height: min(56svh, 38rem); align-self: end; }
   .ch-scene :global(img) { position: absolute; bottom: 0; width: auto; max-width: none; will-change: transform; transform-origin: 50% 100%; }
   .ch-scene :global(.c-bottle) { height: 100%; left: calc(50% - 15rem); transform: translateX(calc((1 - var(--te)) * -75vw)) rotate(calc(var(--te) * 31deg - var(--k) * 2.5deg)); }
   .ch-scene :global(.c-glass) { height: 56%; left: calc(50% + .4rem); transform: translateX(calc((1 - var(--te)) * 75vw)) rotate(calc(var(--te) * -9deg + var(--k) * 1.5deg)); }
@@ -257,7 +259,7 @@ const contactRow = (t: string) => {
   .em-cols { display: grid; gap: clamp(1.8rem, 4vw, 3rem); }
   .em-you { font-family: var(--display); font-style: italic; font-size: clamp(1.4rem, 2.5vw, 2.3rem); line-height: 1.22; color: var(--moss); padding-left: 1.2rem; border-left: 2px solid var(--sage); max-width: 22em; }
   .em-me { font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.65; max-width: 30rem; }
-  .em-me :global(.em) { font-family: var(--display); font-size: 1.28em; }
+  .em-me :global(.em) { font-family: inherit; font-style: normal; font-size: 1em; font-weight: 600; }
   .em-pic { width: 100%; }
   @media (min-width: 900px) { .em-cols { grid-template-columns: 1fr 1fr; column-gap: clamp(3rem, 8vw, 9rem); align-items: end; } }
 
@@ -265,8 +267,8 @@ const contactRow = (t: string) => {
   .connect { background: var(--dark); color: var(--cream); padding: var(--section) 0; }
   .cn-in { display: grid; gap: clamp(1.4rem, 3vw, 2.4rem); }
   .cn-h { font-size: clamp(2.4rem, 6.4vw, 6.2rem); line-height: .92; letter-spacing: -.04em; color: var(--sage); max-width: 9em; text-wrap: balance; }
-  .cn-lead { font-family: var(--display); font-style: italic; font-size: clamp(1.5rem, 3vw, 2.8rem); line-height: 1.12; max-width: 20em; }
-  .cn-with { font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.6; max-width: 32rem; color: var(--mist); }
+  .cn-lead { font-family: var(--display); font-style: italic; font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.6; max-width: 32rem; }
+  .cn-with { font-size: clamp(1.5rem, 3vw, 2.8rem); line-height: 1.12; max-width: 20em; color: var(--mist); }
   .cn-list { display: grid; margin-top: clamp(1.5rem, 4vw, 3rem); border-top: 1px solid rgb(194 201 169 / .35); }
   .cn-item { display: grid; grid-template-columns: auto 1fr; gap: clamp(1rem, 3vw, 3rem); align-items: baseline; padding: clamp(1.4rem, 3vw, 2.4rem) 0; border-bottom: 1px solid rgb(194 201 169 / .35); }
   .cn-no { font-family: var(--sans); font-weight: 400; font-size: clamp(2.6rem, 6vw, 5rem); line-height: .85; color: var(--sage); }
@@ -278,11 +280,11 @@ const contactRow = (t: string) => {
   /* ---------- 8. the bottle opens ---------- */
   .open-track { --p: 0; --o: min(1, max(0, calc((var(--p) - .12) * 2.6))); --s: min(1, max(0, calc((var(--p) - .42) * 2.4)));
     position: relative; height: 320svh; background: var(--dark); color: var(--cream); }
-  .open-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; justify-items: center; align-content: end; padding: 0 var(--pad); }
+  .open-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; justify-items: center; align-content: end; padding: 0 var(--pad) clamp(1rem, 4svh, 2.5rem); }
   .open-line { position: absolute; left: 0; right: 0; top: 14svh; display: grid; justify-items: center; gap: .1em; padding: 0 var(--pad); text-align: center; font-family: var(--display); font-weight: 300; line-height: .95; }
   .ol { display: block; font-size: clamp(2.2rem, 8vw, 7.6rem); letter-spacing: -.04em; white-space: nowrap; opacity: min(1, max(0, calc((var(--s) * 3 - var(--i, 0)) ))); transform: translateY(calc((1 - min(1, max(0, calc(var(--s) * 3 - var(--i, 0))))) * 3rem)); }
   .ol1 { --i: 0; } .ol2 { --i: 1; font-style: italic; color: var(--sage); } .ol3 { --i: 2; font-size: clamp(3rem, 12vw, 11rem); font-style: italic; color: var(--cream); }
-  .pure { --h: min(58svh, 34rem); position: relative; width: calc(var(--h) * .254); height: var(--h); margin-bottom: 0; transform: translateY(calc(var(--o) * 3svh)); }
+  .pure { --h: min(58svh, 34rem); position: relative; width: calc(var(--h) * .254); height: var(--h); margin-bottom: 0; }
   .pure :global(img) { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; }
   .pure :global(.pb-body) { clip-path: inset(10.6% 0 0 0); }
   .pure :global(.pb-cap) { clip-path: inset(0 0 89.4% 0); transform-origin: 20% 100%; transform: translate(calc(var(--o) * 9vw), calc(var(--o) * -26svh)) rotate(calc(var(--o) * 34deg)); will-change: transform; }
@@ -306,6 +308,11 @@ const contactRow = (t: string) => {
   .ct-label { margin-top: clamp(2rem, 5vw, 4rem); color: var(--cream); }
   .ct-list { display: grid; gap: .9rem; }
   .ct-list li { font-family: var(--display); font-size: clamp(1.53rem, 3.06vw, 2.72rem); line-height: 1.1; padding-bottom: .9rem; border-bottom: 1px solid rgb(238 233 193 / .5); }
+  .ct-more { display: flex; flex-wrap: wrap; gap: .6rem 2rem; margin-top: clamp(1.2rem, 2.6vw, 2.2rem); }
+  .ct-more p { font-size: .85rem; line-height: 1.5; color: var(--cream); }
+  .ct-more :global(a) { text-decoration: none; padding-bottom: .35em; border-bottom: 1px solid rgb(238 233 193 / .55); transition: color .3s, border-color .3s; }
+  .ct-more :global(a:hover), .ct-more :global(a:focus-visible) { color: var(--sage); border-color: var(--sage); }
+  .ct-more :global(.ph) { font-size: .95em; }
   .ct-list :global(.ph) { font-size: .9em; }
   .ct-list :global(.ci) { display: inline-grid; place-items: center; width: 1.9em; height: 1.9em; margin-right: .55em; vertical-align: -.35em; border: 1px solid rgb(238 233 193 / .6); border-radius: 50%; font-size: .62em; }
   .ct-list :global(a) { text-decoration-thickness: 1px; text-underline-offset: .2em; }

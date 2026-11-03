@@ -63,7 +63,7 @@ export const contents = (() => {
   }
   for (const n of nodes) { n.years = yearsOf(n.roles); n.href = hrefFor(n.anchor, n.title); }
   // Photos by entry: 01, 02 (none on the entry itself), Lam Yên, Different kitchens, 03 (a lily cut-out), 04 (the Pure Rice bottle), 05 (none)
-  const ids = ['know-1', '', 'know-2-1', 'know-2-2', 'f-lily-cut', 'mua-pure-rice', ''];
+  const ids = ['know-1', '', 'know-2-1', 'know-2-2', 'f-woman', 'mua-pure-rice', ''];
   nodes.forEach((n, i) => { n.photo = ids[i] ?? ''; });
   return { title: (bs.find((b) => b.t === 'h1') as { text: string }).text, nodes };
 })();

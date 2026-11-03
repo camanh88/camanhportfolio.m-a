@@ -1,12 +1,11 @@
 ---
 // TEMPORARY review tool: a blank sticky note that floats in a corner of every page, so
 // Cam Anh can read the site full-screen and type her comments as she goes.
-// It exists only while reviewing: it renders only when PUBLIC_REVIEW=1 (and only if <ReviewNote /> is in Base.astro; it was taken out on Oct 29)
-// and never in a normal `npm run build`. It holds no site copy; the only text on it is what she types.
+// It exists only while reviewing: it renders in `npm run dev` (or a build made with PUBLIC_REVIEW=1) and never in a normal `npm run build`. It holds no site copy; the only text on it is what she types.
 //
 // TO REMOVE WHEN REVIEW IS DONE: delete the <ReviewNote /> line (and its import) in src/layouts/Base.astro,
 // then delete this file. Nothing else depends on it.
-const on = import.meta.env.PUBLIC_REVIEW === '1';   // off by default since Oct 29: to bring the note back, add <ReviewNote /> to Base.astro and run with PUBLIC_REVIEW=1
+const on = import.meta.env.DEV || import.meta.env.PUBLIC_REVIEW === '1';
 ---
 {on && (
   <>
@@ -43,7 +42,7 @@ const on = import.meta.env.PUBLIC_REVIEW === '1';   // off by default since Oct 
     </aside>
 
     <style is:inline>
-      .rv { --rv-paper: #FFF1A6; --rv-edge: #E9D676; position: fixed; z-index: 9000; right: 1rem; bottom: 1rem; font-family: var(--sans, sans-serif); color: #141312; }
+      .rv { --rv-paper: #FFF1A6; --rv-edge: #E9D676; position: fixed; z-index: 9000; right: 4.4rem; bottom: 1rem; font-family: var(--sans, sans-serif); color: #141312; }
       .rv[data-state="closed"] .rv-note { display: none; }
       .rv[data-state="open"] .rv-tab { display: none; }
       .rv-tab { appearance: none; border: 0; cursor: pointer; width: 2.75rem; height: 2.75rem; display: grid; place-items: center; color: #141312; opacity: .82; background: linear-gradient(225deg, var(--rv-edge) 0 .8rem, var(--rv-paper) .8rem); box-shadow: 0 1px 6px rgb(20 19 18 / .22); transition: opacity .25s; }
@@ -83,7 +82,7 @@ const on = import.meta.env.PUBLIC_REVIEW === '1';   // off by default since Oct 
         function place() {
           if (st.w) note.style.width = st.w + 'px';
           if (st.h) note.style.height = st.h + 'px';
-          if (st.x == null) { root.style.left = 'auto'; root.style.top = 'auto'; root.style.right = '1rem'; root.style.bottom = '1rem'; return; }
+          if (st.x == null) { root.style.left = 'auto'; root.style.top = 'auto'; root.style.right = '4.4rem'; root.style.bottom = '1rem'; return; }
           var box = root.getBoundingClientRect();
           var x = Math.min(Math.max(0, st.x), Math.max(0, innerWidth - box.width));
           var y = Math.min(Math.max(0, st.y), Math.max(0, innerHeight - box.height));

@@ -1,6 +1,6 @@
 # Cover
 
-Hi Mùa, I’m Cam Anh.
+Hi Mùa, I’m Cẩm Anh.
 
 An F&B marketer who’s in love with Vietnamese culture and craftsmanship.
 

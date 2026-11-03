@@ -5,7 +5,7 @@ import { inline } from '../lib/md';
 // two role lines lead to their project on the In the making page (Cam Anh, Oct 27)
 const projectLink = (t: string) => (/Mono Coffee Lab/.test(t) ? '#k-mono' : /Golden Gate/.test(t) ? '#k-gg' : '');
 // each photo's width as a share of its half of the page (proportions come from the crops themselves)
-const size: Record<string, string> = { 'know-1': '88%', 'know-2-1': '62%', 'know-2-2': '92%', 'f-lily-cut': '58%', 'mua-pure-rice': '24%' };
+const size: Record<string, string> = { 'know-1': '88%', 'know-2-1': '62%', 'know-2-2': '92%', 'f-woman': '52%', 'mua-pure-rice': '24%' };
 // theme colour per entry: [dot / year colour, is it dark enough to colour the year text]
 const theme: [string, boolean][] = [['--teal', true], ['--tomato', true], ['--forest', true], ['--mustard', false], ['--oxblood', true], ['--teal', true]];
 // Photos alternate right, left, right, left, right. A title without photo sits on the same side as the entry after it.

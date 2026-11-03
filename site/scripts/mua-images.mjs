@@ -67,7 +67,8 @@ const crop45 = async (file, y, w = 1200) => {
   if (ch > m.height) { ch = m.height; cw = Math.round(m.height * 4 / 5); }
   return sharp(await img.extract({ left: Math.round((m.width - cw) / 2), top: Math.round((m.height - ch) * y), width: cw, height: ch }).resize({ width: w }).toBuffer());
 };
-await put('mua-4-1', await (await crop45('4.1.jpg', 0.5, 800)).toBuffer(), 'A heap of fresh green cốm flakes on banana leaves.', [480]);
+// the new 4.1 (hands holding a bag of cốm): cropped above the source watermark at the bottom
+await put('mua-4-1', await sharp(path.join(ASSETS, 'thay the 4.1.jpg')).extract({ left: 140, top: 0, width: 512, height: 640 }).toBuffer(), 'Hands holding open a clear bag of fresh green cốm flakes over a bowl of more cốm.', [480]);
 await put('mua-4-2', await (await crop45('4.2.jpg', 0.72, 1200)).toBuffer(), 'Chopsticks lifting a stretchy, glossy green cốm xào from a tray, with flecks of gold leaf, against a dark background.', [480, 960]);
 const W3 = 2400, H3 = 1350, T = W3 / 3;
 const tiles = [['4.3.1.jpg', 0.3], ['4.3.2.jpg', 0.5], ['4.3.3.jpg', 0.55]];

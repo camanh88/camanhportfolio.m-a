@@ -51,10 +51,11 @@ My contact:
 - Gmail: camanhn88@gmail.com
 - Phone: +84 822 508 018
 
-CV (PDF) · [link coming soon]
+CV (PDF)
 
 BUILD NOTE: Cam Anh (Nov 3, note TONG QUAN R1): "Cốm Tú Lệ" is a link to a VnExpress article and "cốm xào" is plain text (the Cốm sidepath is no longer used on this page); the colon after "my ex" is removed; the Heiwa phrase, bullets 2 and 3 and the contact lines are her new wording.
 BUILD NOTE: Cam Anh (Nov 3, note TONG QUAN R2): the page title is shown on two lines without full stops ("Why Mùa" / "Why me"); the title in the Contents keeps its full stops. "cốm xào" is bold in the Technique paragraph; the bold on "variety and quality of Vietnamese ingredients," is removed; the Portfolio line is removed from Contact.
+BUILD NOTE: The label "CV (PDF)" is a link to the new CV (assets in site/public/cv/CV_Nguyen_Cam_Anh.pdf, copied from "CV_ Nguyen Cam Anh.pdf", Nov 3). To change the CV, replace that file.
 BUILD NOTE: Words in **bold** are the builder's emphasis (size, weight, colour), proposed for Cam Anh to confirm; the script itself has no bold in these sections.
 BUILD NOTE: Source: "26. MÙA APPLYING. Web script", sections 04 and 05 (Nov 3). Section labels (Opening, Lam Yên, Same values, Values, Closing, Contact) are for the builder and are not rendered; the "###" headings are shown. "{{About Cốm | …}}" reuses the Cốm sidepath of the earlier web, as the script asks.
 BUILD NOTE: The Interview-notes block "Raised on Hanoi's table" and the stronger version of the three bullets are NOT on the web (script: they stay in the Interview notes).

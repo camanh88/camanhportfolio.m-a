@@ -44,7 +44,8 @@ const closeLines = closing.split(/,\s+/).map((l, i, a) => (i < a.length - 1 ? l 
 const contactP = text(secs['contact']);
 const contactLine = contactP[0] ?? '';
 const contactLabel = contactP[1] ?? '';
-const contactMore = contactP.slice(2);   // CV and portfolio: small links under the list
+const cvUrl = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}cv/CV_Nguyen_Cam_Anh.pdf`;
+const contactMore = contactP.slice(2).map((t) => (/^CV\b/.test(t) ? `<a class="xl" href="${cvUrl}" target="_blank" rel="noopener noreferrer">${t}<span class="xl-arrow" aria-hidden="true">↗</span></a>` : inline(t)));   // CV and portfolio: small links under the list
 const contactItems = (secs['contact'] ?? []).filter((b): b is Extract<Block, { t: 'ul' }> => b.t === 'ul').flatMap((b) => b.items);
 const contactHtml = inline(contactLine).replace(';)', '<span class="wink">;)</span>');
 const icons: Record<string, string> = {
@@ -169,7 +170,7 @@ const contactRow = (t: string) => {
           <ul class="ct-list">
             {contactItems.map((t) => <li set:html={contactRow(t)} />)}
           </ul>
-          {contactMore.length > 0 && <div class="ct-more label">{contactMore.map((t) => <p set:html={inline(t)} />)}</div>}
+          {contactMore.length > 0 && <div class="ct-more label">{contactMore.map((t) => <p set:html={t} />)}</div>}
         </div>
         <div class="ct-road" aria-hidden="true">
           <svg class="end-hills" viewBox="0 0 1440 120" preserveAspectRatio="none"><path data-ct-hill d="M0,70 C140,40 260,30 400,58 C560,90 640,86 780,56 C920,26 1050,30 1180,56 C1290,78 1380,74 1440,56 L1440,120 L0,120 Z" /><path class="ct-dash" data-ct-line d="M0,70 C140,40 260,30 400,58 C560,90 640,86 780,56 C920,26 1050,30 1180,56 C1290,78 1380,74 1440,56" /></svg>

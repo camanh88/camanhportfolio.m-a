@@ -79,7 +79,10 @@ const again = variant === 'finale' ? ui['music again'] : '';
     if (hint && btn.dataset.again) {   // page 04: always remind the visitor to start this page's music
       setTimeout(() => { hint.classList.add('on'); btn.classList.add('nudge'); }, 1200);
       setTimeout(() => hint.classList.remove('on'), 12000);
-    } else if (hint && !seen() && !read().on) { setTimeout(() => hint.classList.add('on'), 1800); setTimeout(markSeen, 14000); }
+    } else if (hint && !read().on) {   // pages 01-03: the same reminder on every page, unless the music is already playing
+      setTimeout(() => { hint.classList.add('on'); btn.classList.add('nudge'); }, 1200);
+      setTimeout(() => hint.classList.remove('on'), 12000);
+    }
 
     // ---- engine 1: a sound file ----
     const fileEngine = (src: string): Engine => {

@@ -1,0 +1,977 @@
+---
+import Slot from './Slot.astro';
+import Photo from './Photo.astro';
+import { ch02, ui, splitDate, type Block, pages, imageMeta, sidePageBody } from '../lib/data';
+import { inline, leadSplit, esc, slug, textOf, externalLink } from '../lib/md';
+
+type Sec = { h: string; lvl: 3 | 4; body: Block[] };
+const P = ch02.pages;
+// split a page into headed sections (h3 / h4); `pre` = blocks before the first heading
+function sections(key: string) {
+  const pre: Block[] = [], out: Sec[] = [];
+  for (const b of P[key] ?? []) {
+    if (b.t === 'h3' || b.t === 'h4') out.push({ h: b.text, lvl: b.t === 'h3' ? 3 : 4, body: [] });
+    else (out.length ? out[out.length - 1].body : pre).push(b);
+  }
+  return { pre, secs: out };
+}
+const ptxt = (bs: Block[]) => bs.filter((b): b is Extract<Block, { t: 'p' }> => b.t === 'p').map((b) => b.text);
+const lists = (bs: Block[]) => bs.filter((b): b is Extract<Block, { t: 'ul' }> => b.t === 'ul').map((b) => b.items);
+const numTitle = (h: string) => { const m = /^(\d+)\s*[·.]\s*(.*)$/.exec(h); return m ? { n: m[1], t: m[2] } : { n: '', t: h }; };
+const colonSplit = (h: string) => { const i = h.indexOf(':'); return i > 0 ? { label: h.slice(0, i).trim(), title: h.slice(i + 1).trim() } : { label: '', title: h }; };
+
+// ---- P1 ----
+const p1 = sections('p1');
+const p1Name = p1.secs[0]?.h ?? '';
+const p1Roles = (lists(p1.secs[0]?.body ?? [])[0] ?? []).map(splitDate);
+const p1p = ptxt(p1.secs[0]?.body ?? []);
+const p1Foot = p1p[0];
+
+// ---- P2 ----
+const p2 = sections('p2');
+const p2About = p2.secs[0]?.h ?? '';
+const p2BriefH = p2.secs[1]?.h ?? '';
+const p2Sub = ptxt(p2.secs[1]?.body ?? [])[0] ?? '';            // the sub head right after "The brief"
+const p2Intro = ptxt(p2.secs[1]?.body ?? [])[1] ?? '';
+const p2Items = (lists(p2.secs[1]?.body ?? [])[0] ?? []).map((t) => { const { lead, rest } = leadSplit(t); const m = /^(\d+)\.\s*(.*)$/.exec(lead); return { n: m?.[1] ?? '', lead: m?.[2] ?? lead, rest }; });
+
+// ---- P3 ----
+const p3 = sections('p3');
+const p3Head = numTitle(p3.secs[0]?.h ?? '');
+const p3PackH = p3.secs[1]?.h ?? '';
+const p3PackP = ptxt(p3.secs[1]?.body ?? []);
+const p3Pillars = (lists(p3.secs[1]?.body ?? [])[0] ?? []).map(leadSplit);
+const wrap = p3.secs.find((s) => /wrap/i.test(s.h));
+const bag = p3.secs.find((s) => /bag/i.test(s.h));
+const splitDash = (h: string) => { const i = h.indexOf(' - '); return i > 0 ? { t: h.slice(0, i), sub: h.slice(i + 3) } : { t: h, sub: '' }; };
+
+// ---- P4 ----
+const p4 = sections('p4');
+const p4Head = colonSplit(p4.secs[0]?.h ?? '');
+const p4Items = lists(p4.secs[0]?.body ?? [])[0] ?? [];
+
+// ---- P5 ----
+const p5 = sections('p5');
+const p5Head = numTitle(p5.secs[0]?.h ?? '');
+const p5p = ptxt(p5.secs[0]?.body ?? []);
+const p5Image = colonSplit(p5.secs[1]?.h ?? '');
+const p5ImageP = ptxt(p5.secs[1]?.body ?? [])[0] ?? '';
+const p5ImageItems = lists(p5.secs[1]?.body ?? [])[0] ?? [];
+const p5Voice = colonSplit(p5.secs[2]?.h ?? '');
+const p5VoiceP = ptxt(p5.secs[2]?.body ?? []);
+// "That small gesture became our signature. Customers ... said, “…” “…”" -> sentence + the two quotes
+const gesture = p5p[4] ?? '';
+const gQuotes = [...gesture.matchAll(/“[^”]+”/g)].map((m) => m[0]);
+const gSentence = inline(gesture.replace(/\s*“[^”]+”/g, '').replace(/\s+$/, ''));
+const pullPhrase = 'break it, and pull it apart';
+const km = /^([\s\S]*?)\*\*([^*]+?):\s*(break it, and pull it apart\.)\*\*\s*([\s\S]*)$/.exec(p5p[2] ?? '');
+const kBefore = km ? inline(km[1].trim()) : inline(p5p[2] ?? '');
+const kLead = km ? km[2] + ':' : '';
+const kKey = km ? km[3] : '';
+const kAfter = km ? inline(km[4].trim()) : '';
+// the five reels, left to right: picture n goes with link n (Cam Anh, Oct 26 R3: pictures 1 and 3 had been mixed up)
+const reelOrder = [1, 2, 3, 4, 5];
+// Tết 2025: the two small videos swap their links (R3)
+const mochiLink = [0, 2, 1];
+const voiceShop = 'a cordial, welcoming and confident baker';
+const voiceHtml = inline(p5VoiceP[1] ?? '').replace(esc(voiceShop), `<mark class="pull">${esc(voiceShop)}</mark>`);
+
+// ---- P6 ----
+const p6 = sections('p6');
+const p6Head = numTitle(p6.secs[0]?.h ?? '');
+const p6Seasons = (lists(p6.secs[0]?.body ?? [])[0] ?? []).map(leadSplit);
+const p6Small = p6.secs[1]?.h ?? '';
+const mochi = p6.secs.find((x) => /mochi/i.test(x.h));
+const mochiHead = (() => { const i = (mochi?.h ?? '').indexOf(' · '); return i > 0 ? { y: mochi!.h.slice(0, i), t: mochi!.h.slice(i + 3) } : { y: '', t: mochi?.h ?? '' }; })();
+const mochiAll = ptxt(mochi?.body ?? []);
+const mochiResultsLabel = mochiAll.find((t) => /^\*\*results/i.test(t)) ?? '';
+const mochiP = mochiAll.filter((t) => t !== mochiResultsLabel);
+const mochiResults = lists(mochi?.body ?? [])[0] ?? [];
+const mochiIntro = mochiP[0] ?? '';                       // the first paragraph sits on the left, under the heading
+const mochiRest = mochiP.slice(1);
+// "The challenge" gets a thin, hand-drawn red ring (drawn when it scrolls into view)
+const ring = '<svg class="ring" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M8 24 C6 10 40 3 78 5 C108 7 119 17 109 28 C98 38 55 39 25 35 C9 32 2 20 14 12"/></svg>';
+const withRing = (h: string) => h.replace('<strong>The challenge</strong>', `<strong class="circled">The challenge${ring}</strong>`);
+const L = ch02.links;                                     // video addresses (BUILD NOTE lines in the content file)
+const lead = p6.secs.find((x) => /led the way/i.test(x.h))?.h ?? '';     // the conclusion of the three ideas above
+const gia = p6.secs.find((x) => /collab/i.test(x.h));
+const giaHead = splitDash(gia?.h ?? '');
+const giaItems = lists(gia?.body ?? [])[0] ?? [];
+
+// ---- P7 ----
+const p7 = sections('p7');
+const p7Head = numTitle(p7.secs[0]?.h ?? '');
+const p7Body = p7.secs[0]?.body ?? [];
+const years: { y: string; name: string; items: string[]; subs: string[][] }[] = [];
+for (let i = 0; i < p7Body.length; i++) {
+  const b = p7Body[i];
+  if (b.t === 'p') {
+    const t = b.text.replace(/^\*\*|\*\*$/g, '');
+    const j = t.indexOf(' · ');
+    const nx = p7Body[i + 1];
+    years.push({ y: j > 0 ? t.slice(0, j) : t, name: j > 0 ? t.slice(j + 3) : '', items: nx && nx.t === 'ul' ? nx.items : [], subs: nx && nx.t === 'ul' ? (nx.subs ?? []) : [] });
+  }
+}
+
+// the three covers open galleries (layouts by Cam Anh, Oct 21): rows of photos that share a height, two columns, or a collage with a scrolling strip
+const covers = ['ly-7-1', 'ly-7-2', 'ly-7-3'];
+const ar = (id: string) => { const m = imageMeta[id]; return m ? m.width / m.height : 1; };
+const galleries: { rows?: string[][]; cols?: string[][]; strip?: string[] }[] = [
+  { rows: [['ly-4-2', 'ly-71-a'], ['ly-71-b', 'ly-71-c'], ['ly-71-d', 'ly-71-e'], ['ly-71-f', 'ly-71-g']] },
+  { cols: [['ly-72-a', 'ly-7-2', 'ly-72-d', 'ly-72-f', 'ly-72-h'], ['ly-72-b', 'ly-72-c', 'ly-72-e', 'ly-72-g', 'ly-72-i']] },
+  { rows: [['ly-73-a', 'ly-73-b'], ['ly-73-c', 'ly-73-d'], ['ly-73-e', 'ly-7-3']], strip: ['ly-73s-1', 'ly-73s-2', 'ly-73s-3', 'ly-73s-4', 'ly-73s-5', 'ly-73s-6', 'ly-73s-7'] },
+];
+const galleryNote = sidePageBody('Store Opening')[0] ?? '';   // the sentence that used to open as a side page now captions the store gallery
+
+// ---- P8 ----
+const p8 = sections('p8');
+const p8Raw = p8.secs[0]?.h ?? '';
+const p8Num = numTitle(p8Raw);
+const p8Parts = p8Num.t.split('/').map((x) => x.trim());
+const p8Title = p8Parts[p8Parts.length - 1];            // the big words: "What changed"
+const p8Pre = p8Parts.slice(0, -1).join(' / ');          // the small words before it, kept as written
+const p8Items = lists(p8.secs[0]?.body ?? [])[0] ?? [];
+
+// ---- P9 ----
+const p9 = ptxt(P['p9'] ?? []);
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+<article id="ch-02" class="c2" aria-labelledby="c2-title">
+  <a class="back label" href={`${pages.home}#contents`}>{ui.back}</a>
+
+  <!-- P1: opening spread -->
+  <section class="p1">
+    <header class="p1-head">
+      <p class="p1-num label">{ch02.num}</p>
+      <h2 id="c2-title" class="p1-title">{ch02.title}</h2>
+      <p class="p1-hint">{ch02.hint}</p>
+    </header>
+    <h3 class="p1-giant">{p1Name}</h3>
+    <div class="p1-right">
+      <figure class="p1-slot"><Photo id="ly-1-1" sizes="(min-width: 900px) 30vw, 80vw" loading="eager" /></figure>
+      <p class="p1-foot" set:html={inline(p1Foot ?? '')} />
+    </div>
+    <div class="p1-side">
+      <ul class="p1-roles">
+        {p1Roles.map((r) => <li><span class="d">{r.date}</span><span class="r" set:html={inline(r.text)} /></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <!-- P2: about + the brief -->
+  <section class="p2">
+    <div class="p2-about">
+      <button type="button" class="sp sp-photo" data-sp={slug(p2About)} data-side="left" aria-haspopup="dialog">
+        <span class="k">{p2About}</span>
+        <Photo id="ly-2-1" sizes="(min-width: 900px) 40vw, 90vw" />
+        <span class="sp-more" aria-hidden="true">→</span>
+      </button>
+      <p class="p2-sub" set:html={inline(p2Sub)} />
+    </div>
+    <div class="p2-brief">
+      <h3 class="p2-h">{p2BriefH}</h3>
+      <p class="p2-intro" set:html={inline(p2Intro)} />
+      <ol class="p2-items">
+        {p2Items.map((it) => (
+          <li><span class="n" aria-hidden="true">{it.n}</span><div><h4 class="il">{it.lead}</h4><p set:html={inline(it.rest)} /></div></li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- P3: gift worth owning: packaging, the wrap, the signature bag -->
+  <section class="p3">
+    <header class="p3-head">
+      <p class="p3-num" aria-hidden="true">{p3Head.n}</p>
+      <h3 class="p3-title">{p3Head.t}</h3>
+    </header>
+
+    <div class="p3-pack">
+      <div class="p3-packtext">
+        <h4 class="k part part-1">{p3PackH}</h4>
+        <p class="p3-want">{p3PackP[0]}</p>
+        <ul class="pillars">
+          {p3Pillars.map((p, i) => <li class={`pl pl${i + 1}`}><h5>{p.lead}</h5><p set:html={inline(p.rest)} /></li>)}
+        </ul>
+      </div>
+      <div class="p3-t3">
+        <p class="p3-renewed" set:html={inline(p3PackP[1] ?? '')} />
+        <div class="p3-ba">
+          <Photo id="ly-3-1" sizes="(min-width: 900px) 55vw, 90vw" />
+          <span class="arrow" aria-hidden="true">→</span>
+          <Photo id="ly-3-2" sizes="(min-width: 900px) 55vw, 90vw" />
+        </div>
+      </div>
+    </div>
+
+    {wrap && (
+      <div class="p3-wrap">
+        <h4 class="h4i">{splitDash(wrap.h).t}<span class="sub">{splitDash(wrap.h).sub}</span></h4>
+        <div class="stages">
+          <div class="stage s1"><span class="no label">1</span><p set:html={inline(ptxt(wrap.body)[0] ?? '')} /><Photo id="ly-3-3" sizes="(min-width: 900px) 45vw, 90vw" /></div>
+          <div class="stage s2"><span class="no label">2</span><p set:html={inline(ptxt(wrap.body)[1] ?? '')} /><Photo id="ly-3-4" sizes="(min-width: 900px) 40vw, 85vw" /></div>
+        </div>
+      </div>
+    )}
+
+  </section>
+
+  <!-- the signature-bag page: the background picture runs behind the whole page (bag story) -->
+  <section class="bagpage">
+    {bag && (
+      <div class="p3-bag">
+        <div class="bagtext">
+          <h4 class="h4i">{splitDash(bag.h).t}<span class="sub">{splitDash(bag.h).sub}</span></h4>
+          <p class="b0" set:html={inline(ptxt(bag.body)[0] ?? '')} />
+          <p class="b1" set:html={inline(ptxt(bag.body)[1] ?? '')} />
+          <p class="b2" set:html={inline(ptxt(bag.body)[2] ?? '')} />
+          <p class="b3" set:html={inline(ptxt(bag.body)[3] ?? '')} />
+        </div>
+        <div class="bagright">
+          <div class="bagpanel">
+            <Photo id="ly-bag-1" class="bp1" sizes="(min-width: 900px) 24vw, 40vw" />
+            <Photo id="ly-bag-3" class="bp2" sizes="(min-width: 900px) 18vw, 30vw" />
+            <Photo id="ly-bag-2" class="bp3" sizes="(min-width: 900px) 18vw, 30vw" />
+          </div>
+          <div class="seasonal">
+            <Photo id="ly-seasonal-2" class="sb1" sizes="(min-width: 900px) 20vw, 30vw" />
+            <Photo id="ly-seasonal-front-pink" class="sb2" sizes="(min-width: 900px) 16vw, 25vw" />
+            <Photo id="ly-seasonal-1" class="sb3" sizes="(min-width: 900px) 20vw, 30vw" />
+            <Photo id="ly-seasonal-front-green" class="sb4" sizes="(min-width: 900px) 16vw, 25vw" />
+          </div>
+          <p class="seasonal-cap" set:html={inline(ptxt(bag.body)[4] ?? '')} />
+        </div>
+      </div>
+    )}
+
+  </section>
+
+  <!-- P4: brand's image, a wall of photos -->
+  <section class="p4">
+    <div class="wall">
+      <div class="wr r1">
+        <figure class="a rvl"><button type="button" class="zb" data-lb-group="p4" aria-label={ui['open album']}><Photo id="ly-4-1" sizes="(min-width: 900px) 28vw, 90vw" /></button></figure>
+        <div class="p4-text">
+          <p class="k part part-2">{p4Head.label}</p>
+          <h3 class="p4-title">{p4Head.title}</h3>
+          <ul class="p4-items">
+            {p4Items.map((t, i) => <li class={`i${i + 1}`}><span class="n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span><span set:html={inline(t)} /></li>)}
+          </ul>
+        </div>
+        <figure class="b rvl"><button type="button" class="zb" data-lb-group="p4" aria-label={ui['open album']}><Photo id="ly-4-2" sizes="(min-width: 900px) 36vw, 45vw" /></button></figure>
+        <figure class="c rvl"><button type="button" class="zb" data-lb-group="p4" aria-label={ui['open album']}><Photo id="ly-4-3" sizes="(min-width: 900px) 36vw, 45vw" /></button></figure>
+      </div>
+      <div class="wr r2">
+        <figure class="rvl"><button type="button" class="zb" data-lb-group="p4" aria-label={ui['open album']}><Photo id="ly-4-4" sizes="(min-width: 900px) 46vw, 45vw" /></button></figure>
+        <figure class="rvl"><button type="button" class="zb" data-lb-group="p4" aria-label={ui['open album']}><Photo id="ly-4-5" sizes="(min-width: 900px) 30vw, 45vw" /></button></figure>
+        <figure class="rvl"><button type="button" class="zb" data-lb-group="p4" aria-label={ui['open album']}><Photo id="ly-4-6" sizes="(min-width: 900px) 22vw, 45vw" /></button></figure>
+      </div>
+      <div class="wr r3">
+        <figure class="rvl"><button type="button" class="zb" data-lb-group="p4" aria-label={ui['open album']}><Photo id="ly-4-7" sizes="(min-width: 900px) 34vw, 45vw" /></button></figure>
+        <figure class="rvl"><button type="button" class="zb" data-lb-group="p4" aria-label={ui['open album']}><Photo id="ly-4-8" sizes="(min-width: 900px) 37vw, 45vw" /></button></figure>
+        <figure class="rvl"><button type="button" class="zb" data-lb-group="p4" aria-label={ui['open album']}><Photo id="ly-4-9" sizes="(min-width: 900px) 28vw, 45vw" /></button></figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- P5: THE HERO. "Show it the way it's meant to be enjoyed": a mooncake that breaks apart as you scroll -->
+  <section class="p5" data-pull>
+    <div class="pull-track">
+      <div class="stick">
+        <p class="h5-num" aria-hidden="true">{p5Head.n}</p>
+        <h3 class="h5-title">{p5Head.t}</h3>
+        <span class="filling" aria-hidden="true"></span>
+        <div class="moon" aria-hidden="true">
+          <div class="half hl"><div class="disc"><Photo id="ly-5-break" alt="" sizes="(min-width: 900px) 62svh, 74vw" /></div></div>
+          <div class="half hr"><div class="disc"><Photo id="ly-5-break" alt="" sizes="(min-width: 900px) 62svh, 74vw" /></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p5-kitchen wrap">
+      <div class="owner"><p set:html={inline(p5p[0] ?? '')} /><p class="owner2" set:html={inline(p5p[1] ?? '')} /></div>
+      <div class="kcol">
+        <Photo id="ly-5-baker" class="kc1" sizes="(min-width: 900px) 12vw, 40vw" />
+        <Photo id="ly-5-racks" class="kc2" sizes="(min-width: 900px) 16vw, 50vw" />
+        <video class="lyv kc3" muted loop playsinline preload="none" poster={`${base}img/lyv-pull-poster-960.webp`} data-hd={`${base}video/lyv-pull-hd.mp4`} data-sd={`${base}video/lyv-pull-sd.mp4`} aria-label={imageMeta['ly-5-pull']?.alt ?? ''}></video>
+      </div>
+      <div class="kt">
+        <p set:html={kBefore} />
+        {kKey && <p class="key"><span class="key-lead">{kLead}</span><span class="key-phrase">{kKey}</span></p>}
+        {kAfter && <p set:html={kAfter} />}
+        <p class="shot" set:html={inline(p5p[3] ?? '')} />
+      </div>
+      <Photo id="ly-5-balls" class="kballs" sizes="(min-width: 900px) 24vw, 70vw" />
+    </div>
+
+    <div class="p5-signature">
+      <div class="sig-in">
+        <p class="gs" set:html={gSentence} />
+        {gQuotes.map((q, i) => <p class={`gq gq${i + 1}`}>{q}</p>)}
+      </div>
+    </div>
+
+    <div class="p5-library wrap">
+      <div class="lib-text"><p set:html={inline(p5p[5] ?? '')} /><p set:html={inline(p5p[6] ?? '')} /><p set:html={inline(p5p[7] ?? '')} /></div>
+      <div class="reels">
+        {reelOrder.map((n, i) => (
+          <a class={`reel r${i + 1}`} href={L.reels?.[n - 1] ?? '#'} target="_blank" rel="noopener noreferrer" aria-label={`${ui.reel} ${i + 1} (${ui['new tab']})`}>
+            <Photo id={`ly-reel-${n}`} sizes="(min-width: 900px) 14vw, 20vw" />
+            <span class="play" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5.5v13l11-6.5z" fill="currentColor" /></svg></span>
+            <span class="out" aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="p5-two wrap">
+      <div class="reg">
+        <p class="k part part-2 again"><span class="ret" aria-hidden="true">↺</span>{p5Image.label}</p>
+        <h4 class="reg-t">{p5Image.title}</h4>
+        <p class="reg-p" set:html={inline(p5ImageP)} />
+        <ul class="reg-l">{p5ImageItems.map((t) => <li set:html={inline(t)} />)}</ul>
+      </div>
+      <Photo id="ly-5-pull" class="reg-a" sizes="(min-width: 900px) 28vw, 90vw" />
+      <Photo id="ly-5-still" class="reg-b" sizes="(min-width: 900px) 28vw, 90vw" />
+    </div>
+
+    <div class="p5-voice">
+      <div class="voice-in wrap">
+        <div class="vt">
+          <p class="k part part-3">{p5Voice.label}</p>
+          <h4 class="vh">{p5Voice.title}</h4>
+          <p set:html={inline(p5VoiceP[0] ?? '')} />
+          <p class="vsecond" set:html={voiceHtml} />
+        </div>
+        <p class="vnote" set:html={inline(p5VoiceP[2] ?? '')} />
+      </div>
+    </div>
+  </section>
+
+  <!-- P6: keep the season going -->
+  <section class="p6">
+    <header class="p6-head wrap">
+      <p class="p6-num" aria-hidden="true">{p6Head.n}</p>
+      <h3 class="p6-title">{p6Head.t}</h3>
+    </header>
+    <div class="p6-cards wrap">
+      {p6Seasons.map((s, i) => <article class={`sc sc${i + 1}`}><h4>{s.lead}</h4><p set:html={inline(s.rest)} /></article>)}
+    </div>
+    <p class="p6-strip label">{p6Small}</p>
+
+    <div class="mochi wrap">
+      <div class="mo-head"><p class="mo-y">{mochiHead.y}</p><h4 class="mo-t">{mochiHead.t}</h4></div>
+      <p class="mo-intro" set:html={inline(mochiIntro)} />
+      <div class="mo-p">
+        {mochiRest.map((t) => <p set:html={withRing(inline(t))} />)}
+      </div>
+      <div class="phones">
+        {[0, 1, 2].map((k) => (
+          <a class="reel" href={L.mochi?.[mochiLink[k]] ?? '#'} target="_blank" rel="noopener noreferrer" aria-label={`${ui.reel} ${k + 1} (${ui['new tab']})`}>
+            <Photo id={`ly-mochi-${k + 1}`} sizes="(min-width: 900px) 20vw, 50vw" />
+            <span class="play" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5.5v13l11-6.5z" fill="currentColor" /></svg></span>
+            <span class="out" aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </div>
+      <aside class="results">
+        <p class="rl label" set:html={inline(mochiResultsLabel)} />
+        <ul>{mochiResults.map((t) => <li set:html={inline(t)} />)}</ul>
+      </aside>
+    </div>
+
+    {lead && <p class="p6-lead wrap">{lead}</p>}
+    <span class="p6-arrow" aria-hidden="true"></span>
+
+    <div class="gia-band"><div class="gia wrap">
+      <div class="gpics">
+        <Photo id="ly-6-room" class="gp1" sizes="(min-width: 900px) 24vw, 45vw" />
+        <Photo id="ly-6-phone" class="gp2" sizes="(min-width: 900px) 24vw, 45vw" />
+        <Photo id="ly-6-box" class="gp3" sizes="(min-width: 900px) 30vw, 55vw" />
+        <Photo id="ly-6-card" class="gp4" sizes="(min-width: 900px) 24vw, 45vw" />
+      </div>
+      <div class="gt">
+        <h4 class="gh" set:html={inline(giaHead.t)} />
+        <p class="gsub">{giaHead.sub}</p>
+        <ul class="gl">{giaItems.map((t) => <li set:html={inline(t)} />)}</ul>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- P7: the Mid-Autumn seasons, three panels -->
+  <section class="p7" aria-labelledby="p7-title">
+    <header class="p7-head wrap">
+      <p class="p7-num" aria-hidden="true">{p7Head.n}</p>
+      <h3 id="p7-title" class="p7-title">{p7Head.t}</h3>
+    </header>
+    <div class="panels">
+      {years.map((y, i) => (
+        <article class={`panel y${i + 1}`}>
+          <p class="yr">{y.y}</p>
+          <h4 class="yn" set:html={inline(y.name)} />
+          <ul class="yl">{y.items.map((t, k) => (
+            <li><span set:html={inline(t)} />{y.subs[k]?.length ? <ul class="yl2">{y.subs[k].map((u) => <li set:html={inline(u)} />)}</ul> : null}</li>
+          ))}</ul>
+          <button type="button" class="cover" data-gal={`gal-${i + 1}`} aria-haspopup="dialog" aria-label={`${ui['open gallery']}: ${y.y}`}>
+            <Photo id={covers[i]} sizes="(min-width: 900px) 30vw, 85vw" />
+            <span class="cover-more" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" /></svg></span>
+          </button>
+        </article>
+      ))}
+    </div>
+    {years.map((y, i) => (
+      <dialog class="gal" id={`gal-${i + 1}`} aria-label={`${ui.gallery}: ${y.y}`}>
+        <div class="gal-sheet">
+          <header class="gal-head">
+            <p class="label">{y.y} · {textOf(y.name)}</p>
+            <button type="button" class="gal-x" aria-label={ui.close}><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" /></svg></button>
+          </header>
+          {i === 1 && galleryNote && <p class="gal-note" set:html={inline(galleryNote)} />}
+          {galleries[i]?.rows && <div class="gal-rows">{galleries[i].rows!.map((r) => (
+            <div class="gal-row">{r.map((id) => <figure style={`flex:${ar(id).toFixed(4)} 1 0%`}><Photo id={id} sizes="(min-width: 760px) 24rem, 50vw" /></figure>)}</div>
+          ))}</div>}
+          {galleries[i]?.cols && <div class="gal-cols">{galleries[i].cols!.map((c) => (
+            <div class="gal-col">{c.map((id) => <figure><Photo id={id} sizes="(min-width: 760px) 24rem, 50vw" /></figure>)}</div>
+          ))}</div>}
+          {galleries[i]?.strip && (
+            <div class="gal-strip-wrap">
+              <p class="label sr-only">{ui['behind the scenes']}</p>
+              <div class="gal-strip" tabindex="0" role="region" aria-label={ui['behind the scenes']}>{galleries[i].strip!.map((id) => <figure style={`aspect-ratio:${ar(id).toFixed(4)}`}><Photo id={id} sizes="16rem" /></figure>)}</div>
+            </div>
+          )}
+        </div>
+      </dialog>
+    ))}
+  </section>
+
+  <!-- P8: what changed -->
+  <section class="p8">
+    <div class="p8-in wrap">
+      <header class="p8-head">
+        <p class="p8-num" aria-hidden="true">{p8Num.n}</p>
+        {p8Pre && <p class="k p8-pre">{p8Pre}</p>}
+        <h3 class="p8-title">{p8Title}</h3>
+      </header>
+      <ol class="p8-list">
+        {p8Items.map((t, i) => <li class={`it it${i + 1}`}><span class="n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span><p set:html={inline(t)} /></li>)}
+      </ol>
+    </div>
+  </section>
+
+  <!-- P9: rooted -->
+  <footer class="p9">
+    <Photo id="ly-p9-bg" class="p9-bg" alt="" sizes="100vw" />
+    <div class="p9-in wrap">
+      <div class="p9-text">
+        <p class="a p9-in-p" set:html={inline((p9[0] ?? '').replace(/^“/, ''))} />
+        <p class="p9-in-p" set:html={inline(p9[1] ?? '')} />
+        <p class="end p9-in-p" set:html={inline((p9[2] ?? '').replace(/”$/, ''))} />
+      </div>
+      <Photo id="ly-9-1" class="p9-slot" sizes="(min-width: 900px) 24rem, 80vw" />
+    </div>
+    <a class="next" href="#ch-02-kitchens" aria-label={ui['chapter nav']}><span class="line" aria-hidden="true"></span></a>
+  </footer>
+</article>
+
+<style>
+  .c2 { background: var(--paper); position: relative; overflow-x: clip; --pad: clamp(1.25rem, 4vw, 4rem); }
+  .c2 figure { margin: 0; }
+  .back { position: sticky; top: var(--back-top, .75rem); z-index: 30; width: fit-content; margin: 0 var(--gutter) 0 auto; padding: .7rem 1rem; min-height: 44px; display: flex; align-items: center; text-decoration: none; background: var(--paper); border: 1px solid var(--ink); color: var(--ink); transition: background .3s, color .3s; }
+  .back:hover { background: var(--ink); color: var(--paper); }
+  .k { font-family: var(--sans); font-weight: 600; font-size: .75rem; letter-spacing: .18em; text-transform: uppercase; }
+  .wrap { width: min(100% - 2 * var(--pad), 88rem); margin-inline: auto; }
+  /* the three parts of the work, each marked with a coloured tab like the index tabs of a binder */
+  .part { --c: var(--orange); --on: #fff; display: inline-flex; align-items: center; gap: .55em; width: fit-content; padding: .55rem 1rem .5rem; background: var(--c); color: var(--on); border-radius: .45rem .45rem 0 0; font-size: .78rem; }
+  .part-1 { --c: var(--orange); } .part-2 { --c: var(--moss); } .part-3 { --c: var(--sage); --on: var(--ink); }
+  .part.again { background: transparent; color: var(--c); box-shadow: inset 0 0 0 1.5px var(--c); }
+  .part .ret { font-size: 1.1em; line-height: 1; letter-spacing: 0; }
+  .c2 :global(strong) { font-weight: 700; }
+
+  /* ---------- P1 ---------- */
+  .p1 { margin-top: -2.75rem; background: var(--paper-2); padding: 6.5rem var(--pad) clamp(3rem, 6vw, 5rem); display: grid; gap: 1.75rem; position: relative; }
+  .p1-num { color: var(--orange); }
+  .p1-title { font-size: clamp(1.6rem, 3vw, 2.8rem); line-height: 1.05; font-weight: 400; max-width: 14ch; margin-top: .6rem; }
+  .p1-hint { font-family: var(--display); font-style: italic; font-size: clamp(1.1rem, 1.5vw, 1.4rem); margin-top: .9rem; color: var(--ink-soft); max-width: 22ch; }
+  .p1-giant { font-size: clamp(5.4rem, 24vw, 19rem); line-height: .8; letter-spacing: -.05em; font-weight: 300; color: var(--orange); margin: .2em 0 0 -.04em; position: relative; z-index: 2; }
+  .p1-right { width: min(78%, 22rem); justify-self: end; margin-top: -4rem; display: grid; gap: 1.25rem; }
+  .p1-lead { font-weight: 400; font-size: clamp(1.4rem, 2.4vw, 2.1rem); font-family: var(--display); line-height: 1.12; }
+  .p1-lead :global(strong) { font-weight: 600; }
+  .p1-roles { margin-top: 1.4rem; display: grid; gap: .9rem; }
+  .p1-roles .d { display: block; font-size: .72rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--moss); }
+  .p1-roles .r { display: block; font-size: 1.05rem; line-height: 1.4; }
+  .p1-roles .r :global(.sp) { color: var(--moss); }   /* only the Full Stack Marketer title is plum */
+  .p1-quote { margin: 0; font-family: var(--display); font-style: italic; font-size: clamp(1.4rem, 2.6vw, 2.3rem); line-height: 1.22; display: grid; gap: .8rem; max-width: 28ch; color: var(--moss); }
+  .p1-quote :global(strong) { font-weight: 600; }
+  .p1-foot { font-size: .98rem; line-height: 1.55; max-width: 26rem; border-top: 1px solid var(--ink); padding-top: .9rem; }
+  .p1-foot :global(strong) { background: linear-gradient(transparent 62%, var(--sage) 62% 92%, transparent 92%); padding: 0 .1em; font-weight: 600; }
+  @media (min-width: 900px) {
+    .p1 { grid-template-columns: repeat(12, 1fr); column-gap: 2rem; row-gap: 0; min-height: 100svh; align-content: start; }
+    .p1-head { grid-column: 1 / 6; grid-row: 1; }
+    .p1-giant { grid-column: 1 / 10; grid-row: 2; align-self: start; margin-top: clamp(1.5rem, 5vw, 5rem); font-size: clamp(8rem, 17vw, 17rem); }
+    .p1-right { grid-column: 9 / 13; grid-row: 1 / 4; width: 100%; margin: 0; z-index: 1; align-self: start; }
+    .p1-side { grid-column: 1 / 5; grid-row: 3; margin-top: clamp(2rem, 4vw, 4rem); }
+    .p1-foot { max-width: none; }
+  }
+
+  /* ---------- P2 ---------- */
+  .p2 { display: grid; }
+  .p2-about { background: var(--moss); color: var(--cream); padding: clamp(3rem, 6vw, 6rem) var(--pad); display: grid; gap: 2rem; align-content: start; }
+  .p2-about .k { font-size: .85rem; }
+  .p2-brief { padding: clamp(3rem, 6vw, 6rem) var(--pad); }
+  .p2-h { font-size: clamp(3rem, 8vw, 7rem); line-height: .92; letter-spacing: -.035em; font-weight: 300; }
+  /* the sub head sits under the Lam Yên picture: small, italic, as wide as the picture (Oct 27) */
+  .p2-sub { font-family: var(--display); font-style: italic; font-weight: 400; font-size: clamp(1.1rem, 1.5vw, 1.35rem); line-height: 1.25; color: var(--cream); max-width: 22em; margin: -.4rem 0 0; }
+  .p2-intro { margin-top: 1.4rem; max-width: 30rem; font-size: 1.05rem; }
+  /* the photo opens an (empty for now) side panel from the left */
+  .p2-about .sp-photo { display: grid; gap: 1.6rem; width: 100%; text-decoration: none; color: inherit; text-align: left; position: relative; }
+  .p2-about .sp-photo .k { text-decoration: underline dotted; text-decoration-thickness: 1.5px; text-underline-offset: .3em; }
+  .p2-about .sp-photo:hover .k { text-decoration-style: solid; }
+  .sp-more { position: absolute; right: .8rem; bottom: .8rem; width: 2.6rem; height: 2.6rem; display: grid; place-items: center; background: var(--paper-2); color: var(--ink); font-size: 1.2rem; }
+  .p2-items { margin-top: 2.5rem; display: grid; }
+  .p2-items li { display: grid; grid-template-columns: 4.5rem 1fr; gap: 1rem; align-items: start; padding: 1.4rem 0; border-top: 1px solid var(--ink); }
+  .p2-items li:last-child { border-bottom: 1px solid var(--ink); }
+  .p2-items .n { font-family: var(--display); font-weight: 300; font-size: clamp(3.4rem, 6vw, 5.4rem); line-height: .8; color: var(--orange); }
+  .p2-items li:nth-child(2) .n { color: var(--moss); } .p2-items li:nth-child(3) .n { color: var(--sage); }
+  .il { font-family: var(--display); font-weight: 600; font-size: clamp(1.5rem, 2.3vw, 2.1rem); line-height: 1.05; margin-bottom: .45rem; }
+  @media (min-width: 900px) { .p2 { grid-template-columns: 5fr 7fr; min-height: 90svh; } }
+
+  /* ---------- P3 ---------- */
+  .p3 { padding: var(--section) var(--pad); display: grid; gap: clamp(5rem, 10vw, 9rem); }
+  .p3-head { display: flex; align-items: baseline; gap: clamp(1rem, 3vw, 3rem); border-top: 1px solid var(--ink); padding-top: 1.2rem; }
+  .p3-num { font-family: var(--display); font-weight: 300; font-size: clamp(5rem, 14vw, 12rem); line-height: .75; color: var(--orange); }
+  .p3-title { font-size: clamp(2.2rem, 6.2vw, 6rem); line-height: .98; letter-spacing: -.03em; font-weight: 400; max-width: 11ch; }
+  /* the whole part runs the full width of the page and starts at the left edge, under its headline (Cam Anh, Oct 26) */
+  .p3-head, .p3-pack { width: 100%; }
+  .p3-pack { display: grid; gap: clamp(2rem, 4vw, 3rem); }
+  .p3-packtext { display: grid; gap: .2rem; justify-items: start; }
+  .p3-packtext > * { max-width: 100%; }
+  .pillars { width: 100%; }
+  .p3-want { font-family: var(--display); font-size: clamp(1.4rem, 2.2vw, 1.9rem); margin: .8rem 0 1.5rem; font-style: italic; }
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(.6rem, 1.6vw, 1.2rem); }
+  .pl { border-top: 6px solid var(--c, var(--orange)); padding-top: .9rem; }
+  .pl1 { --c: var(--orange); } .pl2 { --c: var(--moss); } .pl3 { --c: var(--sage); }
+  .pl h5 { font-family: var(--display); font-weight: 600; font-size: clamp(1.1rem, 2.2vw, 1.5rem); line-height: 1.05; margin-bottom: .3rem; }
+  .p3-ba { display: grid; grid-template-columns: 1fr auto 1fr; gap: clamp(.8rem, 2.4vw, 2rem); justify-items: center; align-items: center; width: min(100%, 56rem); }
+  .p3-ba :global(.slot) { width: 100%; }
+  .arrow { font-size: clamp(2.4rem, 4vw, 3.6rem); line-height: 1; color: var(--orange); }
+  .p3-renewed { font-family: var(--display); font-size: clamp(1.15rem, 1.75vw, 1.5rem); line-height: 1.35; max-width: 38ch; }
+  .p3-renewed :global(strong) { white-space: nowrap; }   /* each bold phrase stays whole on one line */
+  .h4i { font-family: var(--display); font-style: italic; font-weight: 400; font-size: clamp(1.8rem, 3.4vw, 3rem); line-height: 1.05; }
+  .h4i .sub { display: block; font-family: var(--sans); font-style: normal; font-weight: 500; font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; margin-top: .6rem; color: var(--ink-soft); }
+  .stages { display: grid; gap: 2.5rem; margin-top: 2rem; }
+  .stage { display: grid; gap: 1rem; position: relative; }
+  .stage .no { color: var(--orange); }
+  .stage :global(img) { width: 100%; }
+  .s2 { background: var(--paper-2); padding: 1.4rem; }
+  /* the pattern comes straight from Cam Anh's PDF (scripts/ly-bag-bg.mjs), drawn large so the lines stay crisp; below it the page is the same cream */
+  .bagpage { position: relative; background: #FDF9E1 url('/img/ly-bg-1200.webp') top center / max(100%, 900px) auto no-repeat; padding: var(--section) var(--pad) 0; }
+  @media (min-width: 1000px) { .bagpage { background-image: url('/img/ly-bg-2400.webp'); background-size: 100% auto; } }
+  .p3-bag { display: grid; gap: 2.5rem; max-width: 88rem; margin-inline: auto; }
+  .p3-ba :global(img), .stage :global(img), .p1-slot :global(img), .sp-photo :global(img) { display: block; width: 100%; height: auto; }
+  .bagtext { display: grid; gap: 1rem; align-content: start; max-width: 34rem; }
+  .bagtext { max-width: 40rem; }
+  .bagtext .b0 { max-width: 34rem; }
+  /* the bag story steps in and out: the quote is big, the next lines move to the right, the last one is the biggest */
+  .bagtext .b1 :global(strong) { font-weight: 600; }   /* a true semi-bold italic: about a fifth lighter than the heavy bold it had (Oct 26) */
+  .bagtext .b1 { font-family: var(--display); font-weight: 300; font-style: italic; font-size: clamp(1.9rem, 3.4vw, 3.2rem); line-height: 1.08; letter-spacing: -.02em; color: var(--orange); margin-top: .6rem; }
+  .bagtext .b2 { padding-left: clamp(1.5rem, 6vw, 5rem); max-width: 28rem; }
+  .bagtext .b3 { padding-left: clamp(3rem, 12vw, 10rem); font-family: var(--display); font-style: italic; font-weight: 300; font-size: clamp(2rem, 3.8vw, 3.6rem); line-height: 1; letter-spacing: -.02em; color: var(--moss); }
+  .bagright { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-content: start; }
+  /* the signature bags sit on a plum panel; the seasonal bags below are pairs, front over back (Cam Anh's layout, Oct 23) */
+  .bagpanel { position: relative; background: var(--moss); aspect-ratio: 909 / 521; }
+  .bagpanel :global(img), .seasonal :global(img) { position: absolute; display: block; object-fit: cover; }
+  .bagpanel :global(.bp1) { left: 4.1%; top: 6%; width: 37%; height: 84.8%; }
+  .bagpanel :global(.bp2) { left: 47.7%; top: 6.3%; width: 26.4%; height: 46%; object-position: 50% 0; }
+  .bagpanel :global(.bp3) { left: 68.2%; top: 46.6%; width: 25.9%; height: 45%; z-index: 1; }
+  .seasonal { position: relative; aspect-ratio: 886 / 254; }
+  .seasonal :global(.sb1) { left: 0; top: 0; width: 29.6%; height: 83.5%; }
+  .seasonal :global(.sb2) { left: 18.7%; top: 35%; width: 23%; height: 65%; z-index: 1; }
+  .seasonal :global(.sb3) { left: 50.6%; top: 0; width: 30.8%; height: 84.3%; }
+  .seasonal :global(.sb4) { left: 76.2%; top: 33.5%; width: 23.8%; height: 65.4%; z-index: 1; }
+  .seasonal-cap { font-family: var(--sans); font-size: .82rem; line-height: 1.5; color: var(--ink-soft); max-width: 40em; }
+  .bagtext .plain { font-family: var(--display); font-style: italic; font-size: clamp(1.4rem, 2.2vw, 2rem); }
+  .bagtext .aside { font-size: .98rem; color: var(--ink-soft); }
+  .bagtext .big { font-family: var(--display); font-size: clamp(1.4rem, 2.1vw, 1.9rem); line-height: 1.25; color: var(--moss); }
+  /* three steps down the page: the headline, THE PACKAGING (its three things), then the photos with "Renewed the whole packaging…" (Cam Anh, Oct 26, R3) */
+  .p3-pack { gap: clamp(3rem, 6vw, 5rem); }
+  .p3-packtext { padding-bottom: clamp(2.5rem, 5vw, 4rem); border-bottom: 1px solid var(--ink); }
+  .pillars { max-width: 60rem; }
+  .p3-t3 { display: grid; gap: clamp(2rem, 4vw, 3rem); align-items: center; }
+  @media (min-width: 1100px) {
+    .p3-t3 { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: clamp(2.5rem, 6vw, 7rem); }
+    .p3-ba { width: 100%; }
+  }
+  @media (min-width: 900px) {
+    .stages { grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 6rem); }
+    .s2 { margin-top: 5rem; }
+    .p3-bag { grid-template-columns: 5fr 7fr; column-gap: clamp(3rem, 6vw, 7rem); }
+  }
+
+  /* ---------- P4: a full-page wall of photos around one cream card (Cam Anh's layout, Oct 21) ---------- */
+  .p4 { background: var(--moss); padding: clamp(.75rem, 1.6vw, 1.4rem); }
+  .wall { --g: clamp(.4rem, 1.1vw, 1rem); display: grid; grid-template-columns: 1fr 1fr; gap: var(--g); max-width: 120rem; margin-inline: auto; }
+  .wr { display: contents; }
+  .wall figure { margin: 0; overflow: hidden; aspect-ratio: 4 / 5; min-width: 0; min-height: 0; position: relative; }
+  .wall figure :global(img) { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+  /* the photos turn up one after another as the wall scrolls into view (script below) */
+  :global(.js) .wall .rvl { opacity: 0; transform: translateY(2.2rem) scale(.985); transition: opacity 1s var(--ease), transform 1s var(--ease); }
+  :global(.js) .wall .rvl.on { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { :global(.js) .wall .rvl { opacity: 1; transform: none; transition: none; } }
+  .zb { position: absolute; inset: 0; padding: 0; border: 0; background: none; cursor: zoom-in; display: block; overflow: hidden; }
+  .zb :global(img) { transition: transform 1.2s var(--ease); }
+  .zb:hover :global(img) { transform: scale(1.03); }
+  .wr.r1 > .a { grid-column: 1 / -1; aspect-ratio: 4 / 3; }
+  .p4-text { grid-column: 1 / -1; order: -1; background: var(--paper-2); padding: clamp(1.4rem, 4vw, 3rem); display: grid; align-content: center; }
+  .p4-title { font-size: clamp(2rem, 8vw, 3rem); line-height: .96; letter-spacing: -.03em; font-weight: 300; margin: .6rem 0 1.4rem; }
+  .p4-items { display: grid; gap: 1rem; font-family: var(--display); font-size: clamp(1.15rem, 4.4vw, 1.4rem); line-height: 1.22; }
+  .p4-items li { display: grid; grid-template-columns: 2.2rem 1fr; align-items: baseline; }
+  .p4-items .n { font-family: var(--sans); font-size: .7rem; font-weight: 600; letter-spacing: .1em; color: var(--orange); }
+  .p4-items .i3 { font-style: italic; color: var(--moss); }
+  @media (min-width: 900px) {
+    .wall { display: flex; flex-direction: column; }
+    .wr { display: grid; gap: var(--g); }
+    .wall figure { aspect-ratio: auto; }
+    .wr.r1 { grid-template-columns: 282fr 374fr 362fr; grid-template-rows: 1fr 1fr; aspect-ratio: 1044 / 498; }
+    .wr.r1 > .a { grid-column: 1; grid-row: 1 / 3; aspect-ratio: auto; }
+    .wr.r1 > .p4-text { grid-column: 2; grid-row: 1 / 3; order: 0; padding: clamp(1rem, 2.6vw, 2.6rem); }
+    .wr.r1 > .b { grid-column: 3; grid-row: 1; }
+    .wr.r1 > .c { grid-column: 3; grid-row: 2; }
+    .wr.r2 { grid-template-columns: 474fr 312fr 225fr; aspect-ratio: 1044 / 316; }
+    .wr.r3 { grid-template-columns: 348fr 379fr 289fr; aspect-ratio: 1044 / 285; }
+    .p4-title { font-size: clamp(1.5rem, 3vw, 3.1rem); margin: .4rem 0 1.1rem; }
+    .p4-items { font-size: clamp(.95rem, 1.4vw, 1.45rem); gap: .8rem; }
+    .p4-items li { grid-template-columns: 2rem 1fr; }
+  }
+
+  /* ---------- P5: the hero ---------- */
+  .p5 { background: var(--paper); }
+  .pull-track { height: 230svh; position: relative; --p: 0; background: var(--dark); color: var(--cream); }
+  .stick { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; place-items: center; }
+  .h5-num { position: absolute; left: var(--pad); top: 5.5rem; font-family: var(--display); font-weight: 300; font-size: clamp(3rem, 8vw, 7rem); line-height: .8; color: var(--sage); }
+  .h5-title { z-index: 1; position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; font-size: clamp(2.6rem, 8.4vw, 8.6rem); line-height: .98; letter-spacing: -.03em; font-weight: 300; padding: 0 var(--pad); text-wrap: balance; opacity: calc(.25 + var(--p) * .75); }
+  .moon { --d: min(62svh, 74vw); position: relative; width: var(--d); height: var(--d); z-index: 2; pointer-events: none; }
+  .half { position: absolute; top: 0; width: 50%; height: 100%; overflow: hidden; will-change: transform; }
+  .hl { left: 0; transform: translateX(calc(var(--p) * -1 * min(54vw, 36rem))) rotate(calc(var(--p) * -7deg)); transform-origin: 100% 60%; }
+  .hr { left: 50%; transform: translateX(calc(var(--p) * min(54vw, 36rem))) rotate(calc(var(--p) * 7deg)); transform-origin: 0 60%; }
+  .disc { position: absolute; top: 0; width: 200%; height: 100%; }
+  .disc :global(img) { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .hl .disc { left: 0; } .hr .disc { left: -100%; }
+  .filling { position: absolute; z-index: 0; left: 50%; top: 50%; height: min(56svh, 36rem); width: calc(var(--p) * min(34vw, 30rem)); transform: translate(-50%, -50%); background: radial-gradient(closest-side, var(--sage), var(--orange) 70%, transparent); filter: blur(22px); opacity: calc(var(--p) * 1.1); }
+  @media (prefers-reduced-motion: reduce) { .pull-track { height: auto; --p: .55 !important; } .stick { position: relative; height: 100svh; } }
+
+  
+  .p5-kitchen { padding: var(--section) 0 0; display: grid; gap: 1.5rem; }
+  /* the photo column: two small photos, then the video of the mooncake being pulled apart (Cam Anh's layout, Oct 21) */
+  .kcol { position: relative; width: min(100%, 26rem); aspect-ratio: 298 / 853; justify-self: center; }
+  .kcol :global(img), .kcol video { position: absolute; display: block; object-fit: cover; }
+  .kcol :global(.kc1) { left: 0; top: 0; width: 40.6%; height: 19.3%; }
+  .kcol :global(.kc2) { left: 45.3%; top: 7.4%; width: 54.7%; height: 24%; }
+  .kcol .kc3 { left: 0; top: 38.5%; width: 100%; height: 61.5%; background: var(--moss); }
+  :global(.kballs) { display: block; width: min(100%, 22rem); height: auto; }
+  .owner { font-family: var(--display); font-size: clamp(1.3rem, 2.5vw, 2.2rem); line-height: 1.2; max-width: 26ch; letter-spacing: -.01em; }
+  .owner2 { margin-top: .8rem; }
+  .lib-text p + p { margin-top: 1rem; }
+  .reg-l { margin-top: 1rem; display: grid; gap: .5rem; font-family: var(--display); font-size: clamp(1.2rem, 1.8vw, 1.6rem); line-height: 1.25; max-width: 24em; }
+  .reg-l li { position: relative; padding-left: 1.3rem; } .reg-l li::before { content: ''; position: absolute; left: 0; top: .62em; width: .7rem; height: 1px; background: var(--ink); }
+  /* a hand-drawn style arrow runs from "Summer, our quiet season" down to this line (placed by the script, because the distance changes with the screen) */
+  .p6-arrow { display: none; position: absolute; z-index: 3; pointer-events: none; border-left: 2px solid var(--sage); border-bottom: 2px solid var(--sage); border-bottom-left-radius: 1rem; }
+  .p6-arrow.on { display: block; }
+  .p6-arrow::after { content: ''; position: absolute; right: -1px; bottom: -6px; width: 11px; height: 11px; border-top: 2px solid var(--sage); border-right: 2px solid var(--sage); transform: rotate(45deg); }
+  .p6-lead { position: relative; margin-top: clamp(3rem, 6vw, 5rem); width: min(100% - 2 * var(--pad), 88rem); font-family: var(--display); font-style: italic; font-weight: 300; font-size: clamp(1.8rem, 3.8vw, 3.4rem); line-height: 1.1; letter-spacing: -.02em; color: var(--moss); max-width: none; }
+  .kt { display: grid; gap: 1.2rem; max-width: 34rem; font-size: 1.05rem; }
+  .key { display: grid; gap: .15em; margin: .6rem 0; }
+  .key-lead { font-family: var(--display); font-weight: 400; font-size: clamp(1.4rem, 2.2vw, 2rem); line-height: 1.1; }
+  .key-phrase { font-family: var(--display); font-style: italic; font-weight: 300; font-size: clamp(2.8rem, 6.4vw, 6rem); line-height: .94; letter-spacing: -.035em; color: var(--orange); padding-left: clamp(0rem, 2vw, 2rem); }
+  .kt :global(.pull), .vsecond :global(.pull) { background: linear-gradient(transparent 58%, var(--sage) 58% 92%, transparent 92%); color: inherit; padding: 0 .1em; font-weight: 600; }
+  .shot { font-family: var(--display); font-style: italic; font-size: clamp(1.6rem, 2.6vw, 2.4rem); line-height: 1.15; color: var(--orange); }
+    @media (min-width: 900px) {
+    .p5-kitchen { grid-template-columns: repeat(12, 1fr); column-gap: 2rem; row-gap: 2rem; align-items: start; }
+    .owner { grid-column: 1 / 8; grid-row: 1; }
+    .kcol { grid-column: 9 / 13; grid-row: 1 / 4; width: 100%; justify-self: stretch; }
+    .kt { grid-column: 1 / 8; grid-row: 2; }
+    :global(.kballs) { grid-column: 4 / 8; grid-row: 3; width: 100%; max-width: 24rem; justify-self: end; margin-top: 2rem; }
+  }
+
+  .p5-signature { background: var(--mist); margin-top: var(--section); padding: clamp(5rem, 12vw, 10rem) var(--pad); overflow: hidden; }
+  .sig-in { max-width: 70rem; margin: 0 auto; font-family: var(--display); font-weight: 300; }
+  .gs { font-size: clamp(1.4rem, 2.6vw, 2.3rem); max-width: 22em; }
+  .gs :global(.ul) { text-decoration: none; background: linear-gradient(transparent 58%, var(--sage) 58% 92%, transparent 92%); padding: 0 .08em; font-weight: 600; }
+  .gq { font-style: italic; font-size: clamp(3rem, 9.4vw, 9rem); line-height: .94; letter-spacing: -.035em; margin-top: .25em; }
+  .gq1 { color: var(--orange); }
+  .gq2 { color: var(--moss); padding-left: 1.4em; }
+
+  .p5-library { padding: var(--section) 0 0; display: grid; gap: 2rem; }
+  .lib-text { font-size: 1.1rem; max-width: 36rem; }
+  .reels { display: grid; grid-template-columns: repeat(5, 1fr); gap: .5rem; align-items: start; }
+  /* a reel tile is a link to the video (opens in a new tab): the picture will come later */
+  .reel { position: relative; display: block; color: inherit; text-decoration: none; }
+  .reel :global(img) { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; }
+  .reel .play { position: absolute; left: 50%; top: 50%; width: clamp(2.2rem, 4vw, 3.2rem); height: clamp(2.2rem, 4vw, 3.2rem); transform: translate(-50%, -50%); display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--cream); transition: background .3s; }
+  .reel .out { position: absolute; right: .45rem; top: .3rem; font-size: 1.05rem; line-height: 1; }
+  .reel:hover .play, .reel:focus-visible .play { background: var(--orange); }
+  .reels :global(.r2) { margin-top: 1.5rem; } .reels :global(.r3) { margin-top: 3rem; } .reels :global(.r4) { margin-top: 1.5rem; }
+  @media (min-width: 900px) { .p5-library { grid-template-columns: 4fr 8fr; column-gap: 4rem; align-items: start; } .reels { gap: 1rem; } }
+
+  .p5-two { padding: var(--section) 0 0; display: grid; gap: 1.5rem; }
+  .p5-two :global(img) { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; }
+  .reg-t { font-size: clamp(2.2rem, 5vw, 4.4rem); line-height: .98; letter-spacing: -.025em; font-weight: 300; margin: .6rem 0 1.2rem; }
+  .reg-p { font-family: var(--display); font-size: clamp(1.25rem, 1.9vw, 1.7rem); line-height: 1.3; max-width: 26em; }
+  @media (min-width: 900px) {
+    .p5-two { grid-template-columns: 5fr 3.5fr 3.5fr; column-gap: 2rem; align-items: end; }
+    :global(.reg-b) { margin-bottom: 4rem; }
+  }
+
+  .p5-voice { margin-top: var(--section); background: var(--orange); color: var(--cream); padding: clamp(4rem, 9vw, 8rem) 0; overflow: hidden; }
+  .voice-in { display: grid; gap: 2rem; position: relative; }
+  .vh { font-size: clamp(2.4rem, 5.2vw, 5rem); line-height: .98; letter-spacing: -.025em; font-weight: 300; margin: .6rem 0 1.4rem; }
+  .vt p { max-width: 32rem; }
+  .vsecond { margin-top: 1rem; font-family: var(--display); font-size: clamp(1.4rem, 2.2vw, 2rem); line-height: 1.25; }
+  .vsecond :global(.pull) { background: linear-gradient(transparent 58%, rgb(78 107 63 / .55) 58% 92%, transparent 92%); }
+  .vnote { transform: rotate(-4deg); margin-left: min(2cm, 8vw); }   /* moved about 2 cm to the right (Oct 27) */
+  .vnote :global(.hand-note) { font-size: clamp(1.8rem, 4vw, 3.4rem); line-height: 1.15; color: var(--cream); transform: none; display: block; max-width: 14ch; }
+  @media (min-width: 900px) {
+    .voice-in { grid-template-columns: 7fr 5fr; align-items: center; column-gap: 3rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { .half { will-change: auto; } }
+
+  /* ---------- P6 ---------- */
+  .p6 { padding: var(--section) 0 0; position: relative; }
+  .p6-head { display: flex; align-items: baseline; gap: clamp(1rem, 3vw, 3rem); }
+  .p6-num { font-family: var(--display); font-weight: 300; font-size: clamp(5rem, 14vw, 12rem); line-height: .75; color: var(--sage); }
+  .p6-title { font-size: clamp(2.2rem, 6.4vw, 6.4rem); line-height: .96; letter-spacing: -.03em; font-weight: 400; max-width: 10ch; }
+  .p6-cards { display: grid; gap: 1rem; margin-top: 3rem; }
+  .sc { padding: clamp(1.5rem, 3vw, 2.6rem); display: grid; gap: .8rem; align-content: start; }
+  .sc h4 { font-family: var(--display); font-weight: 600; font-size: clamp(1.8rem, 3.2vw, 3rem); line-height: 1; }
+  .sc p { max-width: 28rem; font-size: 1.02rem; }
+  .sc1 { background: var(--sage); }
+  .sc2 { background: var(--moss); color: var(--cream); }
+  .p6-strip { position: relative; z-index: 4; margin-top: clamp(4rem, 8vw, 7rem); background: var(--ink); color: var(--cream); padding: .9rem var(--pad); }
+  .mochi { padding: clamp(3rem, 7vw, 6rem) 0; display: grid; gap: 2rem; }
+  .mo-y { font-family: var(--display); font-weight: 300; font-size: clamp(4rem, 11vw, 10rem); line-height: .8; color: var(--orange); letter-spacing: -.04em; }
+  .mo-t { font-family: var(--display); font-style: italic; font-weight: 400; font-size: clamp(1.6rem, 3vw, 2.6rem); line-height: 1.1; margin-top: .5rem; }
+  .mo-intro { max-width: 30rem; font-size: 1.05rem; color: var(--ink-soft); }   /* the Tết gift-set paragraph: left, under the heading, grey */
+  .mo-p { display: grid; gap: 1rem; max-width: 40rem; }
+  /* The challenge: a thin red ring drawn round the words, like a pen stroke */
+  .mo-p :global(.circled) { position: relative; display: inline-block; padding: .05em .32em; margin: 0 -.3em 0 -.2em; }
+  .mo-p :global(.ring) { position: absolute; left: -.15em; right: -.15em; top: -.3em; bottom: -.3em; width: calc(100% + .3em); height: calc(100% + .6em); overflow: visible; pointer-events: none; }
+  .mo-p :global(.ring path) { fill: none; stroke: var(--orange); stroke-width: 1.5px; stroke-linecap: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.2s var(--ease) .15s; }
+  .mo-p :global(.circled.drawn .ring path) { stroke-dashoffset: 0; }
+  @media (prefers-reduced-motion: reduce) { .mo-p :global(.ring path) { stroke-dashoffset: 0; transition: none; } }
+  /* one main video, two secondary ones */
+  .phones { display: grid; grid-template-columns: 1.8fr 1fr; gap: .8rem; align-items: start; }
+  .phones .reel:nth-child(1) { grid-row: 1 / 3; }
+  .phones .reel:nth-child(2), .phones .reel:nth-child(3) { width: 78%; }
+  .phones .reel:nth-child(3) { justify-self: end; }
+  .results { background: var(--paper-2); padding: 1.6rem; align-self: end; }
+  .results .rl { color: var(--moss); margin-bottom: .8rem; }
+  .results ul { display: grid; gap: .9rem; font-family: var(--display); font-size: clamp(1.25rem, 1.8vw, 1.6rem); line-height: 1.25; }
+  .results li:nth-child(n+2) { font-family: var(--sans); font-size: .574em; line-height: 1.55; }   /* a further 30% smaller (Oct 29) */   /* the two lines after the first result: sans-serif (Oct 27, R5) */
+  .results li:nth-child(n+2)::before { font-size: 1.1em; vertical-align: baseline; }
+  .results li::before { content: '→ '; color: var(--orange); font-family: var(--sans); font-size: .62em; font-weight: 500; vertical-align: .18em; margin-right: .2em; }   /* smaller, in the sans font (Oct 27) */
+  .gia-band { background: var(--mist); margin-top: clamp(3rem, 6vw, 5rem); padding: clamp(3rem, 7vw, 6rem) 0; }
+  .gia { display: grid; gap: 1.5rem; }
+  .gh { font-size: clamp(2.2rem, 4.6vw, 4.2rem); line-height: .98; letter-spacing: -.025em; font-weight: 400; }
+  .gh :global(.xl) { display: block; white-space: nowrap; width: fit-content; }   /* Gia Restaurant on its own line, never broken */
+  .gsub { font-family: var(--display); font-style: italic; font-size: clamp(1.3rem, 2.2vw, 1.9rem); color: var(--orange); margin-top: .4rem; }
+  /* four photos in a stepped collage (Cam Anh's layout, Oct 21); positions are percentages of the frame */
+  .gpics { position: relative; aspect-ratio: 709 / 820; }
+  .gpics :global(img) { position: absolute; display: block; object-fit: cover; }
+  .gpics :global(.gp1) { left: 0; top: 11.5%; width: 44.3%; height: 51%; }
+  .gpics :global(.gp2) { left: 0; top: 63.8%; width: 44.3%; height: 22.8%; }
+  .gpics :global(.gp3) { left: 45.7%; top: 0; width: 54.3%; height: 62.4%; }
+  .gpics :global(.gp4) { left: 45.7%; top: 63.8%; width: 42%; height: 36.2%; }
+  .gl { margin: 1.4rem 0; display: grid; gap: .5rem; }
+  .gl li { padding-left: 1.2rem; position: relative; }
+  .gl li::before { content: ''; position: absolute; left: 0; top: .65em; width: .5rem; height: .5rem; background: var(--sage); border-radius: 50%; }
+  .gp { font-family: var(--display); font-size: clamp(1.2rem, 1.8vw, 1.5rem); line-height: 1.3; max-width: 28rem; }
+  @media (min-width: 900px) {
+    .p6-cards { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .sc2 { margin-top: 3rem; }
+    .mochi { grid-template-columns: repeat(12, 1fr); column-gap: 2rem; align-items: start; }
+    .mo-head { grid-column: 1 / 6; grid-row: 1; } .mo-intro { grid-column: 1 / 6; grid-row: 2; } .mo-p { grid-column: 7 / 13; grid-row: 2; }   /* the right-hand text starts level with the grey paragraph, under the heading (Cam Anh's sketch, Oct 27) */
+    .phones { grid-column: 1 / 9; grid-row: 3; margin-top: 2rem; } .results { grid-column: 9 / 13; grid-row: 3; margin-top: 2rem; }
+    .gia { grid-template-columns: repeat(12, 1fr); column-gap: 2rem; align-items: center; }
+    .gpics { grid-column: 1 / 8; } .gt { grid-column: 9 / 13; }
+  }
+
+  /* ---------- P7 ---------- */
+  .p7 { padding: var(--section) 0 0; }
+  .p7-head { display: flex; align-items: baseline; gap: clamp(1rem, 3vw, 3rem); margin-bottom: 3rem; }
+  .p7-num { font-family: var(--display); font-weight: 300; font-size: clamp(5rem, 14vw, 12rem); line-height: .75; color: var(--orange); }
+  .p7-title { font-size: clamp(2.2rem, 6.2vw, 6rem); line-height: .98; letter-spacing: -.03em; font-weight: 400; max-width: 10ch; }
+  .panels { display: grid; }
+  .panel { padding: clamp(2rem, 4vw, 3.5rem) var(--pad); display: grid; gap: 1rem; align-content: start; }
+  .y1 { background: var(--mist); } .y2 { background: var(--sage); } .y3 { background: var(--moss); color: var(--cream); }
+  .yr { font-family: var(--display); font-weight: 300; font-size: clamp(4.4rem, 9vw, 8rem); line-height: .8; letter-spacing: -.04em; }
+  .yn { font-family: var(--display); font-weight: 600; font-size: clamp(1.5rem, 2.3vw, 2.1rem); line-height: 1.1; min-height: 1.1em; }
+  .yl { display: grid; gap: .7rem; font-size: 1rem; line-height: 1.5; margin-bottom: 1rem; }
+  .yl li { padding-left: 1.1rem; position: relative; }
+  .yl li::before { content: '—'; position: absolute; left: 0; }
+  .yl2 { margin: .5rem 0 0; display: grid; gap: .4rem; }
+  .yl2 li::before { content: '–'; }
+  .cover { appearance: none; border: 0; padding: 0; background: none; cursor: pointer; position: relative; display: block; width: 100%; color: var(--ink); overflow: hidden; }
+  .cover :global(img) { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; transition: transform .6s var(--ease); }
+  .cover:hover :global(img) { transform: scale(1.03); }
+  .cover-more { position: absolute; right: .8rem; bottom: .8rem; width: 2.6rem; height: 2.6rem; display: grid; place-items: center; background: var(--paper-2); transition: background .3s, color .3s; }
+  .cover:hover .cover-more, .cover:focus-visible .cover-more { background: var(--orange); color: var(--cream); }
+  @media (prefers-reduced-motion: reduce) { .cover :global(img) { transition: none; } .cover:hover :global(img) { transform: none; } }
+  /* galleries opened by the three covers */
+  .gal { --gg: clamp(.4rem, 1.2vw, .8rem); border: 0; padding: 0; margin: 0; width: 100%; height: 100%; max-width: none; max-height: none; background: transparent; }
+  .gal::backdrop { background: rgb(58 35 10 / .72); }
+  .gal-sheet { position: relative; width: min(100%, 46rem); height: 100%; margin-inline: auto; background: var(--paper-2); overflow-y: auto; overscroll-behavior: contain; padding: 0 clamp(.7rem, 2vw, 1.2rem) clamp(1.5rem, 4vw, 3rem); }
+  .gal-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 1rem; background: var(--paper-2); padding: .5rem 0; }
+  .gal-x { appearance: none; border: 0; background: transparent; width: 2.75rem; height: 2.75rem; display: grid; place-items: center; cursor: pointer; color: var(--ink); }
+  .gal-x:hover { color: var(--orange); }
+  .gal-note { font-family: var(--display); font-style: italic; font-size: clamp(1.15rem, 1.8vw, 1.5rem); line-height: 1.25; margin: .2rem 0 1rem; max-width: 30em; }
+  .gal figure { margin: 0; min-width: 0; overflow: hidden; }
+  .gal-rows, .gal-col { display: grid; gap: var(--gg); }
+  .gal-row { display: flex; gap: var(--gg); }
+  .gal-row figure :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .gal-cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gg); align-items: start; }
+  .gal-col figure :global(img) { display: block; width: 100%; height: auto; }
+  .gal-strip-wrap { margin-top: 1rem; }
+  .gal-strip { display: flex; gap: var(--gg); overflow-x: auto; margin-top: .6rem; padding-bottom: .7rem; scroll-snap-type: x proximity; }
+  .gal-strip figure { flex: 0 0 auto; height: clamp(11rem, 34vw, 15rem); scroll-snap-align: start; }
+  .gal-strip figure :global(img) { display: block; height: 100%; width: auto; }
+  @media (min-width: 900px) { .panels { grid-template-columns: repeat(3, 1fr); } .y2 { padding-top: calc(clamp(2rem, 4vw, 3.5rem) + 4rem); } .y3 { padding-top: calc(clamp(2rem, 4vw, 3.5rem) + 8rem); } .panel { padding-bottom: 5rem; } }
+
+  /* ---------- P8 ---------- */
+  .p8 { background: var(--paper-2); padding: var(--section) 0 clamp(7rem, 14vw, 12rem); margin-top: 0; }   /* more air between "What changed" and "Day by day…" (Oct 27) */
+  .p8-in { display: grid; gap: 3rem; }
+  .p8-num { font-family: var(--display); font-weight: 300; font-size: clamp(5rem, 14vw, 12rem); line-height: .75; color: var(--orange); }
+  .p8-pre { margin-top: 1rem; color: var(--moss); }
+  .p8-title { font-size: clamp(3rem, 8vw, 7.4rem); line-height: .92; letter-spacing: -.035em; font-weight: 300; margin-top: .3em; }
+  .p8-list { display: grid; }
+  .it { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 1.5rem 0; border-top: 1px solid var(--ink); align-items: baseline; }
+  .it:last-child { border-bottom: 1px solid var(--ink); }
+  .it .n { font-family: var(--sans); font-size: .72rem; font-weight: 600; letter-spacing: .1em; color: var(--orange); }
+  .it p { font-family: var(--display); font-size: clamp(1.3rem, 2vw, 1.9rem); line-height: 1.25; max-width: 30em; }
+  .it1 p { font-size: clamp(2rem, 4.4vw, 4rem); line-height: 1.02; letter-spacing: -.02em; color: var(--moss); font-style: italic; }
+  .it3 p { font-style: normal; color: var(--orange); }
+  /* 04 and 05 are the how lines after the results: indented, small sans-serif; 06 is back in line, italic serif */
+  .it4, .it5 { padding-left: clamp(1.5rem, 5vw, 4.5rem); }
+  .it4 p, .it5 p { font-family: var(--sans); font-size: clamp(.95rem, 1.2vw, 1.05rem); line-height: 1.5; max-width: 36em; }
+  .it6 p { font-style: italic; }
+  @media (min-width: 900px) { .p8-in { grid-template-columns: 4fr 8fr; column-gap: clamp(3rem, 6vw, 7rem); align-items: start; } .p8-head { position: sticky; top: 5rem; } }
+
+  /* ---------- P9 ---------- */
+  .p9 { position: relative; overflow: hidden; background: var(--dark); color: var(--cream); padding: clamp(5rem, 10vw, 9rem) 0 0; }
+  /* the page sits on a soft, darkened photo (Cam Anh's layout, Oct 22): hands folding leaves, out of focus behind the text */
+  :global(.p9-bg) { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 38%; filter: brightness(.72) saturate(.95); z-index: 0; }
+  .p9-in, .next { position: relative; z-index: 1; }
+  .p9-in { display: grid; gap: 2.5rem; align-items: center; }
+  :global(.p9-slot) { display: block; width: 100%; max-width: 24rem; height: auto; }
+  .qm { display: block; font-family: var(--display); font-size: clamp(6rem, 14vw, 12rem); line-height: .6; color: var(--orange); margin-bottom: 1rem; }
+  .p9-text { display: grid; gap: 1.4rem; max-width: 40rem; font-family: var(--display); font-weight: 300; font-size: clamp(1.25rem, 1.9vw, 1.6rem); line-height: 1.4; }
+  .p9-text .a { font-size: clamp(1.7rem, 3vw, 2.6rem); line-height: 1.2; }
+  /* the three paragraphs turn up one after another when the page is reached (script below) */
+  :global(.js) .p9-text .p9-in-p { opacity: 0; transform: translateY(1.4rem); transition: opacity 1.2s var(--ease), transform 1.2s var(--ease); }
+  :global(.js) .p9-text .p9-in-p.on { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { :global(.js) .p9-text .p9-in-p { opacity: 1; transform: none; transition: none; } }
+  .p9-text .aside { font-style: italic; color: var(--mist); font-size: 1.05em; }
+  .p9-text .end { font-style: italic; font-size: clamp(2rem, 4.4vw, 4rem); line-height: 1; letter-spacing: -.02em; color: var(--sage); margin-top: 1rem; }
+  .next { display: block; width: 3rem; height: clamp(6rem, 14vw, 10rem); margin: 3rem auto 0; position: relative; }
+  .line { position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: var(--paper-2); transform-origin: top; animation: draw 2.8s var(--ease) infinite; }
+  @keyframes draw { 0% { transform: scaleY(0); } 60%, 100% { transform: scaleY(1); } }
+  @media (prefers-reduced-motion: reduce) { .line { animation: none; } }
+  @media (min-width: 900px) { .p9-in { grid-template-columns: 7fr 4fr; column-gap: clamp(3rem, 7vw, 8rem); } :global(.p9-slot) { justify-self: end; } }
+</style>
+
+<script>
+  // P5 hero: how far the visitor has scrolled through the sticky stage (0..1) drives the mooncake splitting apart
+  const track = document.querySelector<HTMLElement>('.pull-track');
+  if (track && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const update = () => {
+      const r = track.getBoundingClientRect();
+      const p = Math.min(1, Math.max(0, -r.top / ((r.height - innerHeight) * 0.8))); // the last fifth of the scroll holds the opened state
+      track.style.setProperty('--p', p.toFixed(4));
+    };
+    let raf = 0;
+    addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); }, { passive: true });
+    addEventListener('resize', update);
+    update();
+  }
+</script>
+
+<script>
+  // "Shaping the brand's image": the photos of the wall turn up one after another
+  const wallPics = [...document.querySelectorAll<HTMLElement>('#ch-02 .wall .rvl')];
+  if (wallPics.length) {
+    const quick = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const wio = new IntersectionObserver((es) => {
+      const hit = es.filter((e) => e.isIntersecting).map((e) => e.target as HTMLElement).sort((a, b) => wallPics.indexOf(a) - wallPics.indexOf(b));
+      hit.forEach((el, i) => { wio.unobserve(el); setTimeout(() => el.classList.add('on'), quick ? 0 : i * 260); });
+    }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+    wallPics.forEach((el) => wio.observe(el));
+  }
+</script>
+
+<script>
+  // "Day by day…": the three paragraphs turn up one after another once the page comes into view
+  const p9ps = [...document.querySelectorAll<HTMLElement>('#ch-02 .p9-in-p')];
+  if (p9ps.length) {
+    const quick = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const p9io = new IntersectionObserver((es) => {
+      if (!es.some((e) => e.isIntersecting)) return;
+      p9io.disconnect();
+      p9ps.forEach((el, i) => setTimeout(() => el.classList.add('on'), quick ? 0 : i * 2200));
+    }, { threshold: 0.35 });
+    p9io.observe(document.querySelector('#ch-02 .p9-text')!);
+  }
+</script>
+
+<script>
+  // The pull-apart video: loads when it scrolls into view (light copy on phones), plays muted and looped, pauses when away.
+  // With "reduce motion" it stays on the poster and shows controls instead.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const phone = () => matchMedia('(max-width: 700px)').matches;
+  const vio = new IntersectionObserver((es) => es.forEach((e) => {
+    const v = e.target as HTMLVideoElement;
+    if (e.isIntersecting) {
+      if (!v.getAttribute('src')) v.src = (phone() ? v.dataset.sd : v.dataset.hd) ?? '';
+      if (!reduce) v.play().catch(() => {});
+    } else v.pause();
+  }), { rootMargin: '200px 0px', threshold: 0.15 });
+  document.querySelectorAll<HTMLVideoElement>('.lyv').forEach((v) => {
+    if (reduce) { v.controls = true; v.removeAttribute('loop'); }
+    vio.observe(v);
+  });
+
+  // "The challenge": the red ring is drawn when the words come into view
+  const rio = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('drawn'); rio.unobserve(e.target); } }), { threshold: 0.8 });
+  document.querySelectorAll('.circled').forEach((el) => rio.observe(el));
+
+  // Galleries opened by the three Mid-Autumn covers (native <dialog>: Esc closes, focus returns to the cover)
+  document.querySelectorAll<HTMLButtonElement>('.cover[data-gal]').forEach((btn) => {
+    const dlg = document.getElementById(btn.dataset.gal!) as HTMLDialogElement | null;
+    if (!dlg) return;
+    const close = () => { dlg.close(); document.documentElement.classList.remove('sp-open'); btn.focus(); };
+    btn.addEventListener('click', () => { dlg.showModal(); document.documentElement.classList.add('sp-open'); dlg.querySelector('.gal-sheet')?.scrollTo(0, 0); });
+    dlg.querySelector('.gal-x')?.addEventListener('click', close);
+    dlg.addEventListener('click', (e) => { if (!(e.target as HTMLElement).closest('.gal-sheet')) close(); });
+    dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
+  });
+
+  // The green arrow: from "Summer, our quiet season" down to "We have led the way…" (the distance depends on the screen)
+  const p6 = document.querySelector<HTMLElement>('#ch-02 .p6');
+  const arrow = p6?.querySelector<HTMLElement>('.p6-arrow');
+  const from = p6?.querySelector<HTMLElement>('.sc1 h4');
+  const to = p6?.querySelector<HTMLElement>('.p6-lead');
+  const place = () => {
+    if (!p6 || !arrow || !from || !to) return;
+    const pr = p6.getBoundingClientRect(), fr = from.getBoundingClientRect(), tr = to.getBoundingClientRect();
+    const gap = Math.max(10, Math.min(24, (tr.left - pr.left) * 0.7));
+    const lh = parseFloat(getComputedStyle(to).lineHeight) || 30;
+    const top = fr.top - pr.top + fr.height / 2, bottom = tr.top - pr.top + lh / 2;
+    Object.assign(arrow.style, { left: `${tr.left - pr.left - gap - 4}px`, top: `${top}px`, height: `${Math.max(0, bottom - top)}px`, width: `${gap - 2}px` });
+    arrow.classList.add('on');
+  };
+  if (p6) {
+    new ResizeObserver(place).observe(p6);
+    addEventListener('resize', place);
+    addEventListener('load', place);
+    document.fonts?.ready.then(place);
+    place();
+  }
+</script>

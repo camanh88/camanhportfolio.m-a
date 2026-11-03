@@ -1,0 +1,23 @@
+---
+import { imageMeta } from '../lib/data';
+interface Props { id: string; sizes?: string; alt?: string; class?: string; loading?: 'lazy' | 'eager'; fetchpriority?: 'high' | 'low' | 'auto'; style?: string }
+const { id, sizes = '100vw', alt, class: cls, loading = 'lazy', fetchpriority, style } = Astro.props;
+const m = imageMeta[id];
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const url = (w: number) => `${base}img/${id}-${w}.webp`;
+---
+{m && (
+  <img
+    src={url(m.widths[m.widths.length - 1])}
+    srcset={m.widths.map((w) => `${url(w)} ${w}w`).join(', ')}
+    sizes={sizes}
+    width={m.width}
+    height={m.height}
+    alt={alt ?? m.alt}
+    loading={loading}
+    decoding="async"
+    fetchpriority={fetchpriority}
+    class={cls}
+    style={style}
+  />
+)}

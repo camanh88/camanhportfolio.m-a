@@ -1,0 +1,116 @@
+---
+import { nav, pages, ui } from '../lib/data';
+interface Props { current?: 'home' | 'making' | 'menu' | 'mua' }
+const { current } = Astro.props;
+const items = [
+  { key: 'home', href: pages.home },
+  { key: 'making', href: pages.making },
+  { key: 'menu', href: pages.menu },
+  { key: 'mua', href: pages.mua },
+] as const;
+---
+<header class="hd" data-hd>
+  <div class="hd-in">
+    <div class="id">
+      <a class="name" href={pages.home}>{nav.name.label}</a>
+      {nav.role && <span class="role">{nav.role.label}</span>}
+    </div>
+    <nav class="nav" aria-label={ui['chapter nav']}>
+      <ul>
+        {items.map((i) => (
+          <li>
+            <a href={i.href} aria-current={current === i.key ? 'page' : undefined} aria-describedby={`sub-${i.key}`}>{nav[i.key].label}</a>
+            <span class="sub" id={`sub-${i.key}`}>{nav[i.key].sub}</span>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <a class="contact" href={pages.contact}>{nav.contact.label}</a>
+    <button type="button" class="burger" aria-expanded="false" aria-controls="drawer" aria-label={nav.open.label} data-burger>
+      <span></span><span></span>
+    </button>
+  </div>
+
+  <div class="drawer" id="drawer" hidden data-drawer>
+    <button type="button" class="dclose" aria-label={nav.close.label} data-dclose>
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
+    </button>
+    <ul>
+      {items.map((i) => (
+        <li><a href={i.href} aria-current={current === i.key ? 'page' : undefined}><span class="dl">{nav[i.key].label}</span><span class="ds">{nav[i.key].sub}</span></a></li>
+      ))}
+      <li><a href={pages.contact} class="dcontact"><span class="dl">{nav.contact.label}</span></a></li>
+    </ul>
+  </div>
+</header>
+
+<style>
+  .hd { position: sticky; top: 0; z-index: 60; background: var(--paper-2); border-bottom: 1px solid var(--hair); transition: transform .45s var(--ease); }
+  .hd.away { transform: translateY(-101%); }
+  .hd-in { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: .85rem var(--gutter) .55rem; min-height: 3.6rem; }
+  .id { grid-column: 2; grid-row: 1; justify-self: center; display: grid; justify-items: center; gap: .3rem; }
+  .name { font-family: var(--display); font-weight: 400; font-size: clamp(1.7rem, 3vw, 2.6rem); line-height: 1; letter-spacing: -.02em; text-decoration: none; }
+  .role { font-family: var(--sans); font-weight: 500; font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); line-height: 1; }
+  .nav { grid-column: 1 / -1; grid-row: 2; justify-self: center; margin-top: .7rem; position: relative; }
+  .nav ul { display: flex; gap: clamp(1.5rem, 5vw, 4.5rem); }
+  .nav li { position: relative; }
+  .nav a { display: block; padding: .35rem 0; font-size: .95rem; text-decoration: none; position: relative; white-space: nowrap; }
+  .nav a::after { content: ''; position: absolute; left: 0; right: 0; bottom: .1rem; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .35s var(--ease); }
+  .nav a:hover::after, .nav a[aria-current='page']::after, .nav a:focus-visible::after { transform: scaleX(1); }
+  .nav a[aria-current='page'] { color: var(--orange); }
+  /* the small line that appears under an item when the pointer is over it */
+  .sub { position: absolute; left: 50%; top: calc(100% + .1rem); transform: translate(-50%, -4px); font-family: var(--display); font-style: italic; font-size: 1.05rem; color: var(--ink-soft); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .3s var(--ease), transform .3s var(--ease); z-index: 2; background: var(--paper-2); padding: 0 .4rem; }
+  .nav li:hover .sub, .nav li:focus-within .sub { opacity: 1; transform: translate(-50%, 0); }
+  .nav ul { padding-bottom: 1.5rem; }
+  .hd-in { padding-bottom: 0; }
+  .contact { grid-column: 3; grid-row: 1; justify-self: end; align-self: start; font-size: .85rem; text-decoration: none; padding: .55rem 1.1rem; border: 1px solid var(--ink); background: var(--paper-2); transition: background .3s, color .3s; min-height: 44px; display: flex; align-items: center; }
+  .contact:hover { background: var(--ink); color: var(--cream); }
+  .burger { display: none; }
+  .drawer { display: none; }
+
+  @media (max-width: 800px) {
+    .hd-in { grid-template-columns: 1fr auto; min-height: 3.6rem; padding: .5rem var(--gutter); }
+    .id { grid-column: 1; justify-self: start; justify-items: start; }
+    .nav, .contact { display: none; }
+    .burger { display: grid; gap: 6px; width: 3rem; height: 3rem; place-content: center; background: transparent; border: 0; cursor: pointer; grid-column: 2; }
+    .burger span { display: block; width: 24px; height: 1.5px; background: var(--ink); }
+    .drawer:not([hidden]) { display: block; position: fixed; inset: 0; background: var(--paper); z-index: 70; padding: 5rem var(--gutter) 2rem; overflow-y: auto; }
+    .dclose { position: absolute; top: .6rem; right: .6rem; width: 3rem; height: 3rem; display: grid; place-items: center; background: transparent; border: 0; cursor: pointer; }
+    .drawer ul { display: grid; }
+    .drawer a { display: grid; gap: .2rem; padding: 1.2rem 0; border-top: 1px solid var(--hair); text-decoration: none; }
+    .drawer .dl { font-family: var(--display); font-size: clamp(2.2rem, 9vw, 3rem); line-height: 1; letter-spacing: -.02em; }
+    .drawer .ds { font-family: var(--display); font-style: italic; color: var(--ink-soft); font-size: 1.15rem; }
+    .drawer a[aria-current='page'] .dl { color: var(--orange); }
+  }
+  @media (prefers-reduced-motion: reduce) { .hd { transition: none; } }
+</style>
+
+<script>
+  // arriving from another page with #anchor: wait for the layout (tall sections, images), then jump
+  if (location.hash.length > 1) {
+    const go = () => { const t = document.getElementById(decodeURIComponent(location.hash.slice(1))); if (t) { document.documentElement.style.scrollBehavior = 'auto'; t.scrollIntoView(); document.documentElement.style.scrollBehavior = ''; } };
+    addEventListener('load', () => { go(); setTimeout(go, 400); });
+  }
+  const hd = document.querySelector<HTMLElement>('[data-hd]');
+  if (hd) {
+    // the header slides away when reading down and returns when scrolling up; the "↑ Contents" buttons follow it
+    let last = scrollY;
+    const root = document.documentElement;
+    const set = (away: boolean) => { hd.classList.toggle('away', away); root.style.setProperty('--back-top', away ? '.75rem' : `${hd.offsetHeight + 12}px`); };
+    set(false);
+    addEventListener('scroll', () => {
+      const y = scrollY;
+      if (y > last + 6 && y > 160) set(true); else if (y < last - 6 || y < 80) set(false);
+      last = y;
+    }, { passive: true });
+    hd.addEventListener('focusin', () => set(false));
+
+    const burger = hd.querySelector<HTMLButtonElement>('[data-burger]')!;
+    const drawer = hd.querySelector<HTMLElement>('[data-drawer]')!;
+    const toggle = (open: boolean) => { drawer.hidden = !open; burger.setAttribute('aria-expanded', String(open)); document.documentElement.classList.toggle('sk-open', open); if (open) drawer.querySelector<HTMLElement>('a')?.focus(); else burger.focus(); };
+    burger.addEventListener('click', () => toggle(true));
+    hd.querySelector('[data-dclose]')!.addEventListener('click', () => toggle(false));
+    drawer.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('a')) toggle(false); });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && !drawer.hidden) toggle(false); });
+  }
+</script>

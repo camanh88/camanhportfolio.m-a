@@ -1,0 +1,142 @@
+---
+// Background music: one track for the whole site (Cam Anh, Oct 27). Off by default (browsers do not allow sound without a click).
+// Put the track at public/audio/music.mp3; until it is there, nothing is shown. The labels come from content/ui.md.
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { ui } from '../lib/data';
+const file = ['music.mp3', 'music.m4a'].find((f) => existsSync(path.resolve(process.cwd(), 'public', 'audio', f)));
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+// no file yet: Cam Anh's chosen track plays through YouTube's own embedded player (content/ui.md, key "music youtube")
+const yt = file ? '' : (ui['music youtube'] ?? '').trim();
+---
+{(file || yt) && (
+  <button type="button" class="mu" data-music data-src={file ? `${base}audio/${file}` : ''} data-yt={yt} data-play={ui['music play']} data-pause={ui['music pause']} aria-pressed="false" aria-label={ui['music play']} title={ui['music play']}>
+    <span class="mu-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <svg class="mu-off" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 18V6l10-2v12M9 18a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zm10-2a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path class="mu-slash" d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+  </button>
+)}
+{(file || yt) && <p class="mu-hint" id="mu-hint" aria-hidden="true"><span>{ui['music hint']}</span><i>↘</i></p>}
+{yt && <div class="mu-card" id="mu-card" aria-hidden="true"><div id="mu-yt"></div></div>}
+
+<style is:global>
+  .mu { position: fixed; z-index: 60; right: 1rem; bottom: 1rem; width: 2.75rem; height: 2.75rem; display: grid; place-items: center; padding: 0; cursor: pointer; border: 1px solid var(--ink); border-radius: 50%; background: var(--paper); color: var(--ink); transition: background .3s, color .3s, transform .3s var(--ease); }
+  .mu:hover, .mu:focus-visible { background: var(--ink); color: var(--paper); }
+  .mu .mu-bars { display: flex; align-items: flex-end; gap: 2px; height: 1rem; }
+  .mu .mu-bars i { display: block; width: 3px; height: 30%; background: currentColor; border-radius: 1px; animation: mubar 1s ease-in-out infinite; }
+  .mu .mu-bars i:nth-child(2) { animation-delay: -.3s; } .mu .mu-bars i:nth-child(3) { animation-delay: -.6s; } .mu .mu-bars i:nth-child(4) { animation-delay: -.15s; }
+  @keyframes mubar { 0%, 100% { height: 25%; } 50% { height: 100%; } }
+  .mu .mu-off { display: none; }
+  /* off: the note with a diagonal slash through it */
+  .mu[aria-pressed="false"] .mu-bars { display: none; }
+  .mu[aria-pressed="false"] .mu-off { display: block; }
+  .sp-open .mu, .sp-open .mu-hint { display: none; }
+  /* a quiet hint, shown once, until the visitor presses the music button */
+  .mu-hint { position: fixed; z-index: 59; right: 1.1rem; bottom: 4.5rem; margin: 0; display: flex; align-items: flex-end; gap: .35rem; padding: .3rem .85rem .35rem; border-radius: 999px; background: rgb(238 233 193 / .86); color: #8a857e; font-family: var(--display); font-style: italic; font-size: .98rem; line-height: 1.2; pointer-events: none; opacity: 0; transform: translateY(.4rem); transition: opacity 1s var(--ease), transform 1s var(--ease); }
+  .mu-hint.on { opacity: 1; transform: none; }
+  .mu-hint i { font-style: normal; font-family: var(--sans); font-size: 1.05rem; line-height: 1; }
+  /* YouTube's player is kept out of sight: it only carries the sound (Cam Anh's choice) */
+  .mu-card { position: fixed; z-index: -1; right: 0; bottom: 0; width: 200px; height: 200px; opacity: 0; pointer-events: none; overflow: hidden; }
+  .mu-card iframe { display: block; width: 200px; height: 200px; border: 0; }
+  @media (prefers-reduced-motion: reduce) { .mu .mu-bars i { animation: none; height: 70%; } }
+</style>
+
+<script>
+  // Background music (Cam Anh): it plays only when the visitor presses the music button, from the start of the track, with a fade in.
+  // Pressed while playing: fade out and stop, the button shows a slash. Pressed again: it fades back in and goes on.
+  // A quiet hint ("For a better experience" and an arrow) shows once, until the button is pressed.
+  // Source: a sound file public/audio/music.mp3 if there is one, otherwise YouTube's embedded player kept out of sight.
+  // Pressed on one page: the next page tries to carry on from the same place (if the browser refuses, the button simply stays off).
+  const btn = document.querySelector<HTMLButtonElement>('[data-music]');
+  if (btn) {
+    const KEY = 'port26-music', HINT = 'port26-music-hint';
+    type Engine = { start(): Promise<boolean>; pause(): void; resume(): void; vol(v?: number): number; time(): number };
+    const read = (): { on?: boolean; t?: number } => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
+    const resumeAt = read().on ? (read().t || 0) : 0;   // a track that was left playing on the previous page goes on; otherwise it starts from the beginning
+    let eng: Engine | null = null, wanted = false, startP: Promise<boolean> | null = null, fade = 0;
+    const write = () => { try { localStorage.setItem(KEY, JSON.stringify({ on: wanted, t: eng?.time() || read().t || 0 })); } catch { /* storage may be blocked */ } };
+    const label = () => { const t = wanted ? btn.dataset.pause! : btn.dataset.play!; btn.setAttribute('aria-pressed', String(wanted)); btn.setAttribute('aria-label', t); btn.title = t; };
+    const GAIN = 0.45;
+    const ramp = (to: number, ms: number, done?: () => void) => {
+      if (!eng) return; cancelAnimationFrame(fade);
+      const e = eng, from = e.vol(), t0 = performance.now();
+      const step = (now: number) => { const k = Math.min(1, (now - t0) / ms); e.vol(from + (to - from) * k); if (k < 1) fade = requestAnimationFrame(step); else done?.(); };
+      fade = requestAnimationFrame(step);
+    };
+
+    // ---- the hint ----
+    const hint = document.getElementById('mu-hint');
+    const seen = () => { try { return !!localStorage.getItem(HINT); } catch { return false; } };
+    const markSeen = () => { try { localStorage.setItem(HINT, '1'); } catch { /* ignore */ } hint?.classList.remove('on'); };
+    if (hint && !seen() && !read().on) { setTimeout(() => hint.classList.add('on'), 1800); setTimeout(markSeen, 14000); }
+
+    // ---- engine 1: a sound file ----
+    const fileEngine = (src: string): Engine => {
+      const a = new Audio(src); a.loop = true; a.preload = 'auto'; a.volume = 0;
+      const t = resumeAt; if (t) a.addEventListener('loadedmetadata', () => { try { a.currentTime = t % (a.duration || t + 1); } catch { /* ignore */ } }, { once: true });
+      return {
+        start: () => a.play().then(() => true).catch(() => false),
+        pause: () => a.pause(), resume: () => { a.play().catch(() => {}); },
+        vol: (v) => { if (v !== undefined) a.volume = Math.min(1, Math.max(0, v)); return a.volume; },
+        time: () => a.currentTime,
+      };
+    };
+
+    // ---- engine 2: YouTube's embedded player (nocookie host), out of sight ----
+    let apiP: Promise<void> | null = null;
+    const api = () => apiP ??= new Promise<void>((res) => {
+      if ((window as any).YT?.Player) return res();
+      const prev = (window as any).onYouTubeIframeAPIReady;
+      (window as any).onYouTubeIframeAPIReady = () => { prev?.(); res(); };
+      const sc = document.createElement('script'); sc.src = 'https://www.youtube.com/iframe_api'; document.head.append(sc);
+    });
+    const ytEngine = (id: string): Engine => {
+      let player: any = null, playing = false, volume = 0;
+      return {
+        start: async () => {
+          await api();
+          return new Promise<boolean>((resolve) => {
+            let settled = false; const done = (ok: boolean) => { if (!settled) { settled = true; resolve(ok); } };
+            setTimeout(() => done(playing), 6000);
+            const YT = (window as any).YT;
+            player = new YT.Player('mu-yt', {
+              host: 'https://www.youtube-nocookie.com', width: 200, height: 200, videoId: id,
+              playerVars: { autoplay: 1, controls: 0, playsinline: 1, rel: 0, loop: 1, playlist: id, disablekb: 1, start: Math.floor(resumeAt) },
+              events: {
+                onReady: (e: any) => { e.target.setVolume(0); e.target.playVideo(); },
+                onStateChange: (e: any) => { playing = e.data === 1; if (playing) done(true); },
+                onAutoplayBlocked: () => done(false),
+              },
+            });
+          });
+        },
+        pause: () => { try { player?.pauseVideo(); } catch { /* ignore */ } },
+        resume: () => { try { player?.playVideo(); } catch { /* ignore */ } },
+        vol: (v) => { if (v !== undefined) { volume = Math.min(1, Math.max(0, v)); try { player?.setVolume(Math.round(volume * 100)); } catch { /* ignore */ } } return volume; },
+        time: () => { try { return player?.getCurrentTime?.() ?? 0; } catch { return 0; } },
+      };
+    };
+
+    const ensure = () => (eng ??= btn.dataset.src ? fileEngine(btn.dataset.src) : ytEngine(btn.dataset.yt!));
+    const play = async (): Promise<boolean> => {
+      const e = ensure(); let ok = true;
+      if (!startP) startP = e.start(); else e.resume();
+      ok = await startP;
+      if (ok) ramp(GAIN, 1800);
+      return ok;
+    };
+    if (!btn.dataset.src) setTimeout(() => api(), 2500);   // the YouTube script is fetched in the background so the first press can start the track at once
+
+    btn.addEventListener('click', async () => {
+      markSeen();
+      if (wanted) { wanted = false; ramp(0, 900, () => eng?.pause()); label(); write(); return; }   // fade out and stop
+      wanted = true; label();
+      if (!(await play())) { wanted = false; label(); }
+      write();
+    });
+    // pressed on an earlier page: try to carry on from the same place; if the browser refuses, the button stays off
+    if (read().on) { wanted = true; label(); play().then((ok) => { if (!ok) { wanted = false; label(); write(); } }); }
+    document.addEventListener('visibilitychange', () => { if (!eng || !startP) return; if (document.hidden) { eng.pause(); write(); } else if (wanted) eng.resume(); });
+    addEventListener('pagehide', write);
+    setInterval(() => { if (eng && wanted) write(); }, 4000);
+  }
+</script>

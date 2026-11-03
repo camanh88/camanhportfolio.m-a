@@ -1,0 +1,327 @@
+---
+import '@fontsource/cormorant-garamond/latin-300.css';
+import '@fontsource/cormorant-garamond/latin-ext-300.css';
+import '@fontsource/cormorant-garamond/vietnamese-300.css';
+import '@fontsource/cormorant-garamond/latin-300-italic.css';
+import '@fontsource/cormorant-garamond/latin-ext-300-italic.css';
+import '@fontsource/cormorant-garamond/vietnamese-300-italic.css';
+import '@fontsource/cormorant-garamond/latin-400.css';
+import '@fontsource/cormorant-garamond/latin-ext-400.css';
+import '@fontsource/cormorant-garamond/vietnamese-400.css';
+import '@fontsource/cormorant-garamond/latin-400-italic.css';
+import '@fontsource/cormorant-garamond/latin-ext-400-italic.css';
+import '@fontsource/cormorant-garamond/vietnamese-400-italic.css';
+import '@fontsource/cormorant-garamond/latin-600-italic.css';
+import '@fontsource/cormorant-garamond/latin-ext-600-italic.css';
+import '@fontsource/cormorant-garamond/vietnamese-600-italic.css';
+import '@fontsource/cormorant-garamond/latin-600.css';
+import '@fontsource/cormorant-garamond/latin-ext-600.css';
+import '@fontsource/cormorant-garamond/vietnamese-600.css';
+import '@fontsource/inter/latin-600.css';
+import '@fontsource/inter/latin-ext-600.css';
+import '@fontsource/inter/vietnamese-600.css';
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-ext-400.css';
+import '@fontsource/inter/vietnamese-400.css';
+import '@fontsource/inter/latin-500.css';
+import '@fontsource/inter/latin-ext-500.css';
+import '@fontsource/inter/vietnamese-500.css';
+import '@fontsource/inter/latin-700.css';
+import '@fontsource/inter/latin-ext-700.css';
+import '@fontsource/inter/vietnamese-700.css';
+import '@fontsource/cormorant-garamond/latin-700.css';
+import '@fontsource/cormorant-garamond/latin-ext-700.css';
+import '@fontsource/cormorant-garamond/vietnamese-700.css';
+import '@fontsource/allura/latin-400.css';
+import '@fontsource/allura/latin-ext-400.css';
+import '@fontsource/allura/vietnamese-400.css';
+import '@fontsource/mynerve/latin-400.css';
+import '@fontsource/mynerve/latin-ext-400.css';
+import '@fontsource/mynerve/vietnamese-400.css';
+import '../styles/tokens.css';
+import '../styles/base.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Photo from '../components/Photo.astro';
+import Music from '../components/Music.astro';
+import { cover, sidePages, ui, nav, pages, imageMeta } from '../lib/data';
+import { inline, textOf } from '../lib/md';
+import { SITE_URL, INDEXABLE } from '../lib/site';
+// the foot of every page points to the next page (the last one leads back to the start)
+const order = [['home', pages.home], ['making', pages.making], ['menu', pages.menu], ['mua', pages.mua]] as const;
+const at = order.findIndex(([k]) => k === Astro.props.current);
+const nextKey = at < 0 ? null : order[(at + 1) % order.length];
+const nextNav = nextKey ? nav[nextKey[0]] : null;
+// pictures that appear next to the pointer ({{pic: words | id}} in the content): every image id that starts with "pic-"
+const baseUrl = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const picData = Object.fromEntries(Object.entries(imageMeta).filter(([k]) => k.startsWith('pic-')).map(([k, m]) => {
+  const w = m.widths.find((x: number) => x >= 960) ?? m.widths[m.widths.length - 1];
+  return [k, { src: `${baseUrl}img/${k}-${w}.webp`, alt: m.alt, ratio: m.width / m.height }];
+}));
+const title = Astro.props.title ? `${Astro.props.title} · ${nav.name.label}` : `${nav.name.label} · ${cover.label}`;
+const desc = `${textOf(cover.hero)} ${textOf(cover.sub)}`;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={desc} />
+    <meta name="theme-color" content="#EEE9C1" />
+    {!INDEXABLE && <meta name="robots" content="noindex, nofollow, noarchive" />}
+    <link rel="canonical" href={new URL(Astro.url.pathname, SITE_URL).href} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={nav.name.label} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:url" content={new URL(Astro.url.pathname, SITE_URL).href} />
+    <meta property="og:image" content={`${SITE_URL}/og.jpg`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%234E6B3F'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%23EEE9C1' font-family='Georgia' font-style='italic'%3EM%3C/text%3E%3C/svg%3E" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+  </head>
+  <body>
+    <a class="skip" href="#main">{ui.skip}</a>
+    <Header current={Astro.props.current} />
+    <div id="main"><slot /></div>
+    {nextKey && nextNav && (
+      <div class="pg-next-wrap">
+        <a class="pg-next" href={nextKey[1]}>
+          <span class="label">{ui['next page']}</span>
+          <span class="pn-name">{nextNav.label}<span class="pn-arrow" aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    )}
+    <Footer />
+    <Music />
+
+    <dialog id="sp" class="sp-dialog" aria-labelledby="sp-title" data-soon={ui['coming soon']}>
+      <div class="sp-sheet">
+        <header class="sp-head">
+          <span class="sp-kicker label">{ui['side note']}</span>
+          <button type="button" class="sp-close" aria-label={ui.close}>
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+          </button>
+        </header>
+        <div class="sp-content" id="sp-content" tabindex="-1"></div>
+      </div>
+    </dialog>
+
+    <!-- one picture viewer for the whole site: a light, blurred wash over the page, arrows to move through the group -->
+    <dialog id="lb" class="lb" aria-label={ui.gallery}>
+      <button type="button" class="lb-x" aria-label={ui.close}><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg></button>
+      <button type="button" class="lb-p" aria-label={ui['previous photo']}><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M15 4l-8 8 8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+      <img class="lb-img" alt="" />
+      <button type="button" class="lb-n" aria-label={ui['next photo']}><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M9 4l8 8-8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+    </dialog>
+    <img class="pic-preview" id="pic-preview" alt="" hidden />
+    <script type="application/json" id="pic-data" set:html={JSON.stringify(picData)}></script>
+
+    {sidePages.map((p) => (
+      <template id={`sp-tpl-${p.slug}`}>
+        {p.url
+          ? <h2 class="sp-title" id="sp-title"><a class="xl sp-title-link" href={p.url} target="_blank" rel="noopener noreferrer">{p.name}<span class="xl-arrow" aria-hidden="true">↗</span><span class="sr-only"> ({ui['new tab']})</span></a></h2>
+          : <h2 class="sp-title" id="sp-title">{p.name}</h2>}
+        {!p.after && !p.end && p.images[0] && <figure class="sp-fig"><button type="button" class="sp-zoom" data-lb-group={`sp-${p.slug}`} aria-label={ui.expand}><Photo id={p.images[0]} sizes="(min-width: 760px) 32rem, 92vw" loading="eager" /></button></figure>}
+        {p.wantsPhoto && <div class="sp-slot" aria-hidden="true"></div>}
+        {p.body.map((t, i) => (
+          <>
+            {!p.after && !p.end && i > 0 && p.images[i] && <figure class="sp-fig"><button type="button" class="sp-zoom" data-lb-group={`sp-${p.slug}`} aria-label={ui.expand}><Photo id={p.images[i]} sizes="(min-width: 760px) 32rem, 92vw" loading="eager" /></button></figure>}
+            <p set:html={inline(t)} />
+            {p.after && p.images[i] && <figure class="sp-fig"><button type="button" class="sp-zoom" data-lb-group={`sp-${p.slug}`} aria-label={ui.expand}><Photo id={p.images[i]} sizes="(min-width: 760px) 32rem, 92vw" loading="eager" /></button></figure>}
+          </>
+        ))}
+        {p.end && p.images.map((id) => <figure class="sp-fig"><button type="button" class="sp-zoom" data-lb-group={`sp-${p.slug}`} aria-label={ui.expand}><Photo id={id} sizes="(min-width: 760px) 32rem, 92vw" loading="eager" /></button></figure>)}
+      </template>
+    ))}
+  </body>
+</html>
+
+<style is:global>
+  /* the picture viewer */
+  .lb { border: 0; padding: 0; margin: 0; width: 100%; height: 100%; max-width: none; max-height: none; background: rgb(238 233 193 / .68); color: var(--ink); backdrop-filter: blur(16px) saturate(1.05); -webkit-backdrop-filter: blur(16px) saturate(1.05); overflow: hidden; }
+  .lb::backdrop { background: transparent; }
+  .lb[open] { display: grid; grid-template-columns: 4.5rem 1fr 4.5rem; align-items: center; justify-items: center; }
+  .lb-img { grid-column: 2; max-width: 100%; max-height: 92svh; width: auto; height: auto; object-fit: contain; }
+  .lb-img.in-next { animation: lbnext .45s var(--ease); } .lb-img.in-prev { animation: lbprev .45s var(--ease); }
+  @keyframes lbnext { from { opacity: 0; transform: translateX(3.5rem); } to { opacity: 1; transform: none; } }
+  @keyframes lbprev { from { opacity: 0; transform: translateX(-3.5rem); } to { opacity: 1; transform: none; } }
+  .lb-p, .lb-n, .lb-x { appearance: none; border: 0; background: transparent; color: inherit; cursor: pointer; display: grid; place-items: center; width: 3.2rem; height: 3.2rem; }
+  .lb-p { grid-column: 1; } .lb-n { grid-column: 3; }
+  .lb-x { position: absolute; right: .9rem; top: .9rem; z-index: 2; }
+  .lb-p:hover, .lb-n:hover, .lb-x:hover { color: var(--orange); }
+  @media (max-width: 700px) { .lb[open] { grid-template-columns: 2.6rem 1fr 2.6rem; } .lb-p, .lb-n { width: 2.6rem; } }
+  @media (prefers-reduced-motion: reduce) { .lb-img.in-next, .lb-img.in-prev { animation: none; } }
+  [data-lb-group] { cursor: zoom-in; }
+  /* picture next to the pointer */
+  .pic-preview { position: fixed; z-index: 90; left: 0; top: 0; width: min(17rem, 60vw); height: auto; pointer-events: none; box-shadow: 0 .8rem 2rem rgb(58 35 10 / .25); border: .35rem solid var(--paper-2); background: var(--paper-2); opacity: 0; transition: opacity .2s; }
+  .pic-preview.on { opacity: 1; }
+  .pic-preview[hidden] { display: none; }
+  /* the foot of every page: a small, quiet pointer to the next page, at the right */
+  .pg-next-wrap { background: var(--paper-2); border-top: 1px solid var(--hair); padding: clamp(1.4rem, 3vw, 2.2rem) var(--gutter); display: flex; justify-content: flex-end; }
+  .pg-next { display: grid; justify-items: end; gap: .15rem; color: var(--ink); text-decoration: none; }
+  .pg-next .label { color: var(--ink-soft); font-size: .66rem; }
+  .pn-name { font-family: var(--display); font-weight: 400; font-size: clamp(1.4rem, 2.2vw, 1.9rem); line-height: 1.1; letter-spacing: -.01em; }
+  .pn-arrow { display: inline-block; margin-left: .4em; color: var(--orange); transition: transform .35s var(--ease); }
+  .pg-next:hover .pn-arrow, .pg-next:focus-visible .pn-arrow { transform: translateX(.3em); }
+  @media (prefers-reduced-motion: reduce) { .pn-arrow { transition: none; } }
+  .sp-dialog { border: 0; padding: 0; margin: 0; background: transparent; color: var(--ink); max-width: none; max-height: none; width: 100%; height: 100%; overflow: hidden; }
+  .sp-dialog::backdrop { background: rgb(58 35 10 / 0); transition: background .4s var(--ease); }
+  .sp-dialog.is-open::backdrop { background: rgb(58 35 10 / .45); }
+  .sp-sheet { position: absolute; background: var(--paper); display: flex; flex-direction: column; inset: auto 0 0 0; max-height: 86svh; transform: translateY(100%); transition: transform .45s var(--ease); }
+  .sp-dialog.is-open .sp-sheet { transform: none; }
+  .sp-head { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.25rem .5rem 1.5rem; border-bottom: 1px solid var(--hair); }
+  .sp-kicker { color: var(--ink-soft); }
+  .sp-close { appearance: none; border: 0; background: transparent; width: 2.75rem; height: 2.75rem; display: grid; place-items: center; cursor: pointer; }
+  .sp-close:hover { color: var(--accent); }
+  .sp-content { padding: 1.75rem 1.5rem 3rem; overflow-y: auto; overscroll-behavior: contain; outline: none; }
+  .sp-title { font-family: var(--display); font-weight: 300; font-size: clamp(2.2rem, 7vw, 3.2rem); line-height: 1.02; letter-spacing: -.02em; margin-bottom: 1.25rem; }
+  .sp-content p { margin-bottom: 1rem; max-width: 34rem; }
+  .sp-content strong { font-weight: 700; }
+  /* the word that leads from About Lam Yen to About Cốm: dotted underline and a highlight, no arrow */
+  #sp-content .sp[data-sp="about-com"] { background: linear-gradient(transparent 58%, var(--sage) 58% 92%, transparent 92%); padding: 0 .12em; }
+  #sp-content .sp[data-sp="about-com"] .sp-arrow { display: none; }
+  .sp-back { appearance: none; border: 0; background: none; padding: 0; margin: 0 0 1.2rem; cursor: pointer; font-family: var(--sans); font-size: .85rem; letter-spacing: .04em; color: var(--ink-soft); }
+  .sp-back:hover { color: var(--orange); }
+  .sp-fig { margin: 0 0 1.4rem; }
+  .sp-zoom { appearance: none; border: 0; padding: 0; margin: 0; background: none; display: block; width: 100%; cursor: zoom-in; }
+  .sp-fig img { display: block; width: 100%; height: auto; }
+  .sp-title-link { text-decoration: none; color: inherit; }
+  .sp-title-link:hover { color: var(--orange); }
+  .sp-title-link .xl-arrow { font-size: .32em; vertical-align: 1.2em; margin-left: .15em; }
+  .sp-slot { aspect-ratio: 4 / 3; margin-bottom: 1.5rem; background: var(--paper-2); }
+  @media (min-width: 760px) {
+    .sp-sheet { inset: 0 0 0 auto; width: min(32rem, 92vw); max-height: none; transform: translateX(100%); }
+    .sp-dialog.from-left .sp-sheet { inset: 0 auto 0 0; transform: translateX(-100%); }
+    .sp-dialog.from-left.is-open .sp-sheet { transform: none; }
+    .sp-content { padding: 2.25rem 2.25rem 3rem; }
+    .sp-head { padding: 1.5rem 1.5rem .75rem 2.25rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { .sp-sheet, .sp-dialog::backdrop { transition: none; } }
+</style>
+
+<script>
+  // "Contact" (header, footer, menu) goes straight to the closing page: no smooth scroll through everything above it
+  document.addEventListener('click', (e) => {
+    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href$="#contact"]');
+    const target = document.getElementById('contact');
+    if (!a || !target || new URL(a.href, location.href).pathname !== location.pathname) return;
+    e.preventDefault();
+    const root = document.documentElement;
+    root.style.scrollBehavior = 'auto';
+    target.scrollIntoView({ block: 'start' });
+    history.replaceState(null, '', '#contact');
+    requestAnimationFrame(() => { root.style.scrollBehavior = ''; });
+  });
+
+  // Sidepath panel: one native <dialog> (focus trap + Esc), content cloned from <template>s.
+  const dlg = document.getElementById('sp') as HTMLDialogElement;
+  const content = document.getElementById('sp-content')!;
+  let opener: HTMLElement | null = null;
+  let prev: { slug: string; name: string } | null = null;   // the panel that is showing now
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function open(btn: HTMLElement) {
+    const slug = btn.dataset.sp!;
+    const tpl = document.getElementById(`sp-tpl-${slug}`) as HTMLTemplateElement | null;
+    const inside = !!btn.closest('#sp-content');                    // opened from a link inside the panel (a next side note, or the way back)
+    const goingBack = btn.classList.contains('sp-back');
+    const from = inside && !goingBack ? prev : null;
+    if (!inside) dlg.classList.toggle('from-left', btn.dataset.side === 'left');
+    content.replaceChildren();
+    let name = (btn.firstChild?.textContent ?? '').trim();
+    if (tpl) {
+      content.append(tpl.content.cloneNode(true));
+      name = content.querySelector('.sp-title')?.textContent?.replace(/\s*↗\s*$/, '').trim() ?? name;
+    } else {
+      const h = document.createElement('h2'); h.className = 'sp-title'; h.id = 'sp-title'; h.textContent = name;
+      const p = document.createElement('p'); const ph = document.createElement('span'); ph.className = 'ph'; ph.textContent = `[${dlg.dataset.soon}]`; p.append(ph);
+      content.append(h, p);
+    }
+    if (from) { const b = document.createElement('button'); b.type = 'button'; b.className = 'sp-back'; b.dataset.sp = from.slug; b.textContent = `← ${from.name}`; content.prepend(b); }
+    prev = { slug, name };
+    if (!inside) opener = btn;
+    if (!dlg.open) dlg.showModal();
+    document.documentElement.classList.add('sp-open');
+    content.scrollTop = 0;
+    requestAnimationFrame(() => dlg.classList.add('is-open'));
+  }
+  function close() {
+    dlg.classList.remove('is-open');
+    const done = () => { dlg.close(); document.documentElement.classList.remove('sp-open'); opener?.focus(); };
+    reduce() ? done() : setTimeout(done, 300);
+  }
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const btn = t.closest<HTMLElement>('.sp[data-sp], .sp-back[data-sp]');
+    if (btn) { e.preventDefault(); open(btn); return; }
+    if (t.closest('.sp-close')) close();
+    else if (t === dlg || t.classList.contains('sp-dialog')) close();
+  });
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
+  // clicking the dimmed area (outside the sheet)
+  dlg.addEventListener('click', (e) => { if (!(e.target as HTMLElement).closest('.sp-sheet')) close(); });
+
+  // Picture viewer: any element with data-lb-group="name" opens the pictures of that group (in page order) in the light, blurred viewer
+  const lb = document.getElementById('lb') as HTMLDialogElement;
+  const lbImg = lb.querySelector<HTMLImageElement>('.lb-img')!;
+  let lbGroup: HTMLElement[] = [], lbAt = 0, lbFrom: HTMLElement | null = null;
+  const lbShow = (i: number, dir = 0) => {
+    lbAt = (i + lbGroup.length) % lbGroup.length;
+    const im = lbGroup[lbAt].querySelector('img')!;
+    lbImg.src = im.getAttribute('src') || im.src; lbImg.alt = im.alt;
+    lbImg.classList.remove('in-next', 'in-prev'); void lbImg.offsetWidth;
+    if (dir) lbImg.classList.add(dir > 0 ? 'in-next' : 'in-prev');
+  };
+  const lbClose = () => { lb.close(); lbFrom?.focus(); };
+  document.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLElement>('[data-lb-group]');
+    if (!t || lb.contains(t)) return;
+    lbGroup = [...document.querySelectorAll<HTMLElement>(`[data-lb-group="${t.dataset.lbGroup}"]`)];
+    lbFrom = t; lbShow(lbGroup.indexOf(t)); lb.showModal();
+  });
+  lb.querySelector('.lb-p')!.addEventListener('click', () => lbShow(lbAt - 1, -1));
+  lb.querySelector('.lb-n')!.addEventListener('click', () => lbShow(lbAt + 1, 1));
+  lb.querySelector('.lb-x')!.addEventListener('click', lbClose);
+  lb.addEventListener('click', (e) => { if (e.target === lb) lbClose(); });
+  lb.addEventListener('cancel', (e) => { e.preventDefault(); lbClose(); });
+  lb.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') lbShow(lbAt - 1, -1); if (e.key === 'ArrowRight') lbShow(lbAt + 1, 1); });
+
+  // Words with a picture ({{pic: words | id}}): the picture appears next to the pointer; on touch, a tap shows it beside the words
+  const picData = JSON.parse(document.getElementById('pic-data')!.textContent || '{}');
+  const pv = document.getElementById('pic-preview') as HTMLImageElement;
+  const pvPlace = (x: number, y: number) => {
+    const w = pv.offsetWidth || 272, h = pv.offsetHeight || 272;
+    pv.style.transform = `translate(${Math.min(x + 22, innerWidth - w - 12)}px, ${Math.max(12, Math.min(y - h / 2, innerHeight - h - 12))}px)`;
+  };
+  const pvShow = (b: HTMLElement, x?: number, y?: number) => {
+    const d = picData[b.dataset.pic!]; if (!d) return;
+    pv.src = d.src; pv.alt = d.alt; pv.hidden = false;
+    const r = b.getBoundingClientRect();
+    pvPlace(x ?? r.right, y ?? r.top + r.height / 2);
+    requestAnimationFrame(() => pv.classList.add('on'));
+  };
+  const pvHide = () => { pv.classList.remove('on'); setTimeout(() => { if (!pv.classList.contains('on')) pv.hidden = true; }, 220); };
+  document.querySelectorAll<HTMLElement>('.pic-btn').forEach((b) => {
+    b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') pvShow(b, e.clientX, e.clientY); });
+    b.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && !pv.hidden) pvPlace(e.clientX, e.clientY); });
+    b.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') pvHide(); });
+    b.addEventListener('focus', () => pvShow(b));
+    b.addEventListener('blur', pvHide);
+    b.addEventListener('click', (e) => { if (!pv.hidden && pv.classList.contains('on') && (e as PointerEvent).pointerType !== 'mouse') pvHide(); else if ((e as PointerEvent).pointerType !== 'mouse') pvShow(b); });
+  });
+  document.addEventListener('scroll', pvHide, { passive: true });
+
+  // Small messages ({{tip: …}}): hover and keyboard focus are handled in CSS; a tap toggles, a tap elsewhere or Esc closes
+  document.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest('.tip');
+    document.querySelectorAll('.tip.open').forEach((x) => { if (x !== t) x.classList.remove('open'); });
+    if (t && (e.target as HTMLElement).closest('.tip-btn')) t.classList.toggle('open');
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.tip.open').forEach((x) => x.classList.remove('open')); });
+
+  // Reveal on scroll
+  const io = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+</script>

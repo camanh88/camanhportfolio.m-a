@@ -1,0 +1,371 @@
+---
+import Photo from './Photo.astro';
+import Slot from './Slot.astro';
+import { ch05, ui } from '../lib/data';
+import { inline, sentences, type Block } from '../lib/md';
+
+// ---- the words come from content/ch05-why-mua.md; this file only lays them out ----
+const text = (bs: Block[] = []) => bs.filter((b): b is Extract<Block, { t: 'p' }> => b.t === 'p').map((b) => b.text);
+const secs = ch05.secs;
+// a section split by its "###" headings: [{ h, ps, ul }]; the lead (before the first heading) has h = ''
+const groups = (bs: Block[] = []) => {
+  const out: { h: string; ps: string[]; ul: string[] }[] = [{ h: '', ps: [], ul: [] }];
+  for (const b of bs) {
+    if (b.t === 'h3') out.push({ h: b.text, ps: [], ul: [] });
+    else if (b.t === 'p') out[out.length - 1].ps.push(b.text);
+    else if (b.t === 'ul') out[out.length - 1].ul.push(...b.items);
+  }
+  return out;
+};
+const em = (t: string) => inline(t).replace(/<strong>/g, '<span class="em">').replace(/<\/strong>/g, '</span>');
+
+const opening = em(text(secs['opening'])[0] ?? '');
+
+const ly = groups(secs['lam yên']);
+const lyQ = sentences(ly[0].ps[0] ?? '');
+const stand = { q: lyQ[0] ?? '', a: em(lyQ.slice(1).join(' ')) };
+// "1. Ingredient" -> number 1, word Ingredient
+const panels = ly.slice(1).map((g) => { const m = /^(\d+)\.\s*(.+)$/.exec(g.h); return { n: m?.[1] ?? '', w: m?.[2] ?? g.h, body: g.ps.map(em) }; });
+
+const same = sentences(text(secs['same values'])[0] ?? '');
+const sameLead = same.slice(0, -1).join(' ');
+const sameEnd = same.slice(-1)[0] ?? '';
+
+const vals = groups(secs['values']);
+const embrace = vals[1] ?? { h: '', ps: [], ul: [] };
+const connect = vals[2] ?? { h: '', ps: [], ul: [] };
+
+// "Because, with sake, there's love." on three lines
+const closing = text(secs['closing'])[0] ?? '';
+const closeLines = closing.split(/,\s+/).map((l, i, a) => (i < a.length - 1 ? l + ',' : l));
+
+// contact (the closing section of the page)
+const contactP = text(secs['contact']);
+const contactLine = contactP[0] ?? '';
+const contactLabel = contactP[1] ?? '';
+const contactItems = (secs['contact'] ?? []).filter((b): b is Extract<Block, { t: 'ul' }> => b.t === 'ul').flatMap((b) => b.items);
+const contactHtml = inline(contactLine).replace(';)', '<span class="wink">;)</span>');
+const icons: Record<string, string> = {
+  mail: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="1.5"/><path d="M3.5 7l8.5 6.2L20.5 7"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 3.5h3l1.6 4-2 1.3a11 11 0 005.1 5.1l1.3-2 4 1.6v3a2 2 0 01-2.2 2A15.5 15.5 0 013.5 5.7 2 2 0 015.5 3.5z"/></svg>',
+};
+const linkContact = (t: string) => inline(t).replace(/[\w.+-]+@[\w-]+\.[\w.]+/, (m) => `<a href="mailto:${m}">${m}</a>`).replace(/\+\d[\d ]{7,}\d/, (m) => `<a href="tel:${m.replace(/ /g, '')}">${m}</a>`);
+// "Gmail: ..." / "Phone: ..." -> a fine line symbol instead of the word (the word stays for screen readers)
+const contactRow = (t: string) => {
+  const m = /^([^:]+):\s*(.*)$/.exec(t);
+  const kind = m && /mail/i.test(m[1]) ? 'mail' : m && /phone|tel/i.test(m[1]) ? 'phone' : '';
+  if (!m || !kind) return linkContact(t);
+  return `<span class="ci">${icons[kind]}</span><span class="sr-only">${m[1]}: </span>${linkContact(m[2])}`;
+};
+---
+<article id="why-mua" class="wm" aria-labelledby="wm-title">
+
+  <!-- 1. Cheers: the Classic bottle meets the glass as the page is scrolled, then the title shows -->
+  <section class="cheers" data-cheers>
+    <div class="ch-stage">
+      <div class="ch-head">
+        <p class="ch-num label" aria-hidden="true">{ch05.num}</p>
+        <h1 id="wm-title" class="ch-title">{ch05.title}</h1>
+      </div>
+      <div class="ch-scene" aria-hidden="true">
+        <Photo id="mua-classic" class="c-bottle" alt="" sizes="(min-width: 900px) 18rem, 40vw" loading="eager" />
+        <Photo id="mua-glass" class="c-glass" alt="" sizes="(min-width: 900px) 12rem, 30vw" loading="eager" />
+        <span class="c-ring r1"></span><span class="c-ring r2"></span>
+        <span class="c-ray a"></span><span class="c-ray b"></span><span class="c-ray c"></span><span class="c-ray d"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Forgive me for bringing up my ex -->
+  <section class="ex">
+    <div class="wrap ex-in">
+      <p class="ex-line reveal" set:html={opening} />
+    </div>
+  </section>
+
+  <!-- 3. What makes Lam Yên stand out -->
+  <section class="stand">
+    <div class="wrap stand-in">
+      <p class="stand-q reveal">{stand.q}</p>
+      <p class="stand-a reveal" set:html={stand.a} />
+    </div>
+  </section>
+
+  <!-- 4. Ingredient, technique -->
+  <section class="pair">
+    {panels.map((p, i) => (
+      <div class={`pn pn${i + 1}`}>
+        <div class="pn-pic reveal">
+          <Slot tag={`4.${i + 1} · ${p.w}`} a={i === 0 ? '4 / 5' : '1 / 1'} tone={i === 0 ? 'lime' : 'blush'} />
+        </div>
+        <div class="pn-txt wrap-s">
+          <p class="pn-n reveal" aria-hidden="true">{p.n}</p>
+          <h2 class="pn-w reveal">{p.w}</h2>
+          {p.body.map((b) => <p class="pn-b reveal" set:html={b} />)}
+        </div>
+      </div>
+    ))}
+  </section>
+
+  <!-- 5. Same values -->
+  <section class="same">
+    <div class="wrap same-in">
+      <p class="same-lead reveal">{sameLead}</p>
+      <p class="same-end reveal">{sameEnd}</p>
+    </div>
+  </section>
+
+  <!-- 6. Embrace Vietnamese ingredients and nature -->
+  <section class="embrace">
+    <div class="wrap em-in">
+      <h2 class="em-h reveal">{embrace.h}</h2>
+      <div class="em-cols">
+        <p class="em-you reveal" set:html={em(embrace.ps[0] ?? '')} />
+        <p class="em-me reveal" set:html={em(embrace.ps[1] ?? '')} />
+      </div>
+      <div class="em-pic reveal"><Slot tag="4.3 · Vietnamese ingredients" a="16 / 9" tone="lime" /></div>
+    </div>
+  </section>
+
+  <!-- 7. Connect nature with culture -->
+  <section class="connect">
+    <div class="wrap cn-in">
+      <h2 class="cn-h reveal">{connect.h}</h2>
+      <p class="cn-lead reveal">{connect.ps[0]}</p>
+      <p class="cn-with reveal" set:html={em(connect.ps[1] ?? '')} />
+      <ol class="cn-list">
+        {connect.ul.map((t, i) => (
+          <li class="cn-item reveal" style={`--d:${i * 120}ms`}><span class="cn-no" aria-hidden="true">{i + 1}</span><span class="cn-t" set:html={em(t)} /></li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- 8. The bottle opens as the page is scrolled and the last line shows -->
+  <section class="open-track" data-open>
+    <div class="open-stage">
+      <p class="open-line" aria-label={closing}>
+        {closeLines.map((l, i) => <span class={`ol ol${i + 1}`} aria-hidden="true">{l}</span>)}
+      </p>
+      <div class="pure" aria-hidden="true">
+        <span class="glow"></span>
+        <span class="puff p1"></span><span class="puff p2"></span><span class="puff p3"></span>
+        <Photo id="mua-pure-rice" class="pb-body" alt="" sizes="(min-width: 900px) 20rem, 50vw" />
+        <Photo id="mua-pure-rice" class="pb-cap" alt="" sizes="(min-width: 900px) 20rem, 50vw" />
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. Contact: a bottle on wheels drives across the page from left to right and the words appear behind it -->
+  <section class="contact" aria-labelledby="ct-title">
+    <span id="contact" class="ct-anchor" aria-hidden="true"></span>
+    <div class="ct-track" data-ct>
+      <div class="ct-stage">
+        <div class="ct-in wrap" data-ct-reveal>
+          <h2 id="ct-title" class="ct-line" set:html={contactHtml} />
+          <p class="ct-label label">{contactLabel}</p>
+          <ul class="ct-list">
+            {contactItems.map((t) => <li set:html={contactRow(t)} />)}
+          </ul>
+        </div>
+        <div class="ct-road" aria-hidden="true">
+          <svg class="end-hills" viewBox="0 0 1440 120" preserveAspectRatio="none"><path data-ct-hill d="M0,70 C140,40 260,30 400,58 C560,90 640,86 780,56 C920,26 1050,30 1180,56 C1290,78 1380,74 1440,56 L1440,120 L0,120 Z" /><path class="ct-dash" data-ct-line d="M0,70 C140,40 260,30 400,58 C560,90 640,86 780,56 C920,26 1050,30 1180,56 C1290,78 1380,74 1440,56" /></svg>
+          <svg class="ct-car" data-ct-car viewBox="-52 -84 104 96" width="104" height="96">
+            <!-- a sake bottle on wheels: mirror-symmetric, so it reads the same driving either way -->
+            <rect x="-5" y="-84" width="10" height="7" rx="1.5" class="cb-cap" />
+            <path d="M-4.5,-77 H4.5 V-60 C4.5,-52 17,-48 17,-38 V-12 H-17 V-38 C-17,-48 -4.5,-52 -4.5,-60 Z" class="cb-glass" />
+            <rect x="-17" y="-34" width="34" height="18" class="cb-label" />
+            <path d="M-8,-27 H8" class="cb-line" />
+            <circle cx="-10" cy="-6" r="7" class="cb-wheel" /><circle cx="10" cy="-6" r="7" class="cb-wheel" />
+            <circle cx="-10" cy="-6" r="2.4" class="cb-hub" /><circle cx="10" cy="-6" r="2.4" class="cb-hub" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+</article>
+
+<style>
+  .wm { background: var(--paper); --pad: clamp(1.25rem, 4vw, 4rem); overflow-x: clip; }
+  .wrap { width: min(100% - 2 * var(--pad), 88rem); margin-inline: auto; }
+  .label { font-family: var(--sans); }
+  .em { color: var(--orange); font-style: italic; font-weight: 400; }
+  :global(.sp) { text-underline-offset: .2em; }
+
+  /* ---------- 1. cheers ---------- */
+  .cheers { --p: 0; position: relative; height: 270svh; background: var(--dark); color: var(--cream); }
+  .ch-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; grid-template-rows: auto 1fr; justify-items: center; padding: clamp(3.5rem, 11svh, 7rem) var(--pad) clamp(1.5rem, 6svh, 3.5rem); }
+  .ch-head { text-align: center; opacity: min(1, max(0, calc((var(--p) - .56) * 3.2))); transform: translateY(calc((1 - min(1, max(0, (var(--p) - .56) * 3.2))) * 2rem)); }
+  .ch-num { color: var(--sage); letter-spacing: .2em; }
+  .ch-title { font-size: clamp(3rem, 10vw, 9.5rem); line-height: .86; letter-spacing: -.045em; font-weight: 300; margin-top: .5rem; max-width: 9ch; margin-inline: auto; text-wrap: balance; }
+  /* t: how far the bottle has come (0 far away, 1 touching); k: after the touch */
+  .ch-scene { --t: min(1, max(0, calc(var(--p) / .5))); --te: calc(var(--t) * (2 - var(--t))); --k: min(1, max(0, calc((var(--p) - .5) * 8)));
+    position: relative; width: min(100%, 46rem); height: min(60svh, 40rem); align-self: end; }
+  .ch-scene :global(img) { position: absolute; bottom: 0; width: auto; max-width: none; will-change: transform; transform-origin: 50% 100%; }
+  .ch-scene :global(.c-bottle) { height: 100%; left: calc(50% - 15rem); transform: translateX(calc((1 - var(--te)) * -75vw)) rotate(calc(var(--te) * 31deg - var(--k) * 2.5deg)); }
+  .ch-scene :global(.c-glass) { height: 56%; left: calc(50% + .4rem); transform: translateX(calc((1 - var(--te)) * 75vw)) rotate(calc(var(--te) * -9deg + var(--k) * 1.5deg)); }
+  .c-ring, .c-ray { position: absolute; left: calc(50% - 1.2rem); bottom: 53%; pointer-events: none; opacity: 0; }
+  .c-ring { width: 3rem; height: 3rem; margin: -1.5rem 0 0 -1.5rem; border: 1.5px solid var(--sage); border-radius: 50%; }
+  .c-ring.r1 { opacity: calc(var(--k) * (1 - min(1, max(0, (var(--p) - .58) * 5)))); transform: scale(calc(.5 + (var(--p) - .5) * 14)); }
+  .c-ring.r2 { opacity: calc(var(--k) * (1 - min(1, max(0, (var(--p) - .62) * 5)))); transform: scale(calc(.2 + (var(--p) - .5) * 8)); border-color: var(--cream); }
+  .c-ray { width: 1.5px; height: 1.6rem; background: var(--cream); transform-origin: 50% 100%; opacity: calc(var(--k) * (1 - min(1, max(0, (var(--p) - .6) * 6)))); }
+  .c-ray.a { transform: rotate(-52deg) translateY(-2.4rem); } .c-ray.b { transform: rotate(-12deg) translateY(-3rem); }
+  .c-ray.c { transform: rotate(24deg) translateY(-3rem); } .c-ray.d { transform: rotate(58deg) translateY(-2.4rem); }
+  @media (max-width: 700px) { .ch-scene { height: min(40svh, 24rem); } .ch-scene :global(.c-bottle) { left: calc(50% - 8.4rem); } .ch-scene :global(.c-glass) { left: calc(50% + .4rem); } }
+  @media (prefers-reduced-motion: reduce) { .cheers { height: auto; --p: 1 !important; } .ch-stage { position: relative; min-height: 100svh; } }
+
+  /* ---------- 2. forgive me ---------- */
+  .ex { padding: var(--section) 0 clamp(3rem, 7vw, 6rem); }
+  .ex-line { font-family: var(--display); font-weight: 300; font-size: clamp(2.3rem, 6.4vw, 6.4rem); line-height: 1; letter-spacing: -.035em; max-width: 13em; }
+  .ex-line :global(.em) { display: block; font-size: 1.28em; line-height: .9; margin-top: .12em; }
+
+  /* ---------- 3. what makes Lam Yên stand out ---------- */
+  .stand { padding: clamp(2rem, 6vw, 5rem) 0 var(--section); }
+  .stand-in { display: grid; gap: clamp(1.5rem, 3vw, 3rem); }
+  .stand-q { font-family: var(--display); font-style: italic; font-weight: 400; font-size: clamp(1.9rem, 4.4vw, 4.2rem); line-height: 1.04; letter-spacing: -.02em; color: var(--moss); max-width: 14em; }
+  .stand-a { font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.65; max-width: 34rem; }
+  .stand-a :global(.em) { font-family: var(--display); font-size: 1.5em; line-height: 1; }
+  @media (min-width: 900px) { .stand-in { grid-template-columns: 7fr 5fr; column-gap: clamp(3rem, 8vw, 9rem); align-items: end; } }
+
+  /* ---------- 4. ingredient, technique ---------- */
+  .pair { display: grid; }
+  .pn { display: grid; gap: clamp(2rem, 5vw, 4rem); padding: clamp(3.5rem, 8vw, 7rem) var(--pad); }
+  .pn1 { background: var(--paper-2); }
+  .pn2 { background: var(--paper); }
+  .pn-pic { max-width: 34rem; width: 100%; }
+  .pn-txt { display: grid; gap: 1.2rem; align-content: center; max-width: 36rem; }
+  .pn-n { font-family: var(--sans); font-weight: 400; font-size: clamp(6rem, 17vw, 13rem); line-height: .8; color: var(--sage); letter-spacing: -.05em; }
+  .pn-w { font-size: clamp(2.8rem, 7vw, 6.4rem); line-height: .9; letter-spacing: -.04em; font-style: italic; color: var(--moss); margin-bottom: .6rem; }
+  .pn-b { font-size: clamp(1.02rem, 1.4vw, 1.2rem); line-height: 1.7; }
+  @media (min-width: 900px) {
+    .pn { grid-template-columns: 5fr 6fr; column-gap: clamp(3rem, 8vw, 9rem); align-items: center; padding-block: clamp(5rem, 9vw, 9rem); }
+    .pn2 .pn-pic { grid-column: 2; grid-row: 1; justify-self: end; }
+    .pn2 .pn-txt { grid-column: 1; grid-row: 1; justify-self: end; }
+  }
+
+  /* ---------- 5. same values ---------- */
+  .same { background: var(--moss); color: var(--cream); padding: var(--section) 0; }
+  .same-in { display: grid; gap: clamp(1.4rem, 3vw, 2.4rem); }
+  .same-lead { font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.65; max-width: 32rem; color: var(--cream); }
+  .same-end { font-family: var(--display); font-weight: 300; font-size: clamp(3rem, 10.4vw, 10rem); line-height: .88; letter-spacing: -.045em; max-width: 8em; text-wrap: balance; }
+  @media (min-width: 900px) { .same-end { margin-left: 12%; } }
+
+  /* ---------- 6. embrace ---------- */
+  .embrace { padding: var(--section) 0; }
+  .em-in { display: grid; gap: clamp(2rem, 5vw, 4rem); }
+  .em-h { font-size: clamp(2.4rem, 6.4vw, 6.2rem); line-height: .92; letter-spacing: -.04em; max-width: 10em; text-wrap: balance; }
+  .em-cols { display: grid; gap: clamp(1.8rem, 4vw, 3rem); }
+  .em-you { font-family: var(--display); font-style: italic; font-size: clamp(1.4rem, 2.5vw, 2.3rem); line-height: 1.22; color: var(--moss); padding-left: 1.2rem; border-left: 2px solid var(--sage); max-width: 22em; }
+  .em-me { font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.65; max-width: 30rem; }
+  .em-me :global(.em) { font-family: var(--display); font-size: 1.28em; }
+  .em-pic { width: 100%; }
+  @media (min-width: 900px) { .em-cols { grid-template-columns: 1fr 1fr; column-gap: clamp(3rem, 8vw, 9rem); align-items: end; } }
+
+  /* ---------- 7. connect nature with culture ---------- */
+  .connect { background: var(--dark); color: var(--cream); padding: var(--section) 0; }
+  .cn-in { display: grid; gap: clamp(1.4rem, 3vw, 2.4rem); }
+  .cn-h { font-size: clamp(2.4rem, 6.4vw, 6.2rem); line-height: .92; letter-spacing: -.04em; color: var(--sage); max-width: 9em; text-wrap: balance; }
+  .cn-lead { font-family: var(--display); font-style: italic; font-size: clamp(1.5rem, 3vw, 2.8rem); line-height: 1.12; max-width: 20em; }
+  .cn-with { font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.6; max-width: 32rem; color: var(--mist); }
+  .cn-list { display: grid; margin-top: clamp(1.5rem, 4vw, 3rem); border-top: 1px solid rgb(194 201 169 / .35); }
+  .cn-item { display: grid; grid-template-columns: auto 1fr; gap: clamp(1rem, 3vw, 3rem); align-items: baseline; padding: clamp(1.4rem, 3vw, 2.4rem) 0; border-bottom: 1px solid rgb(194 201 169 / .35); }
+  .cn-no { font-family: var(--sans); font-weight: 400; font-size: clamp(2.6rem, 6vw, 5rem); line-height: .85; color: var(--sage); }
+  .cn-t { font-family: var(--display); font-weight: 300; font-size: clamp(1.4rem, 2.8vw, 2.5rem); line-height: 1.16; letter-spacing: -.015em; max-width: 28em; }
+  .cn-t :global(.em) { color: var(--sage); }
+  :global(.js) .cn-item.reveal { transition-delay: var(--d, 0ms); }
+  @media (min-width: 900px) { .cn-list { margin-left: 16%; } }
+
+  /* ---------- 8. the bottle opens ---------- */
+  .open-track { --p: 0; --o: min(1, max(0, calc((var(--p) - .12) * 2.6))); --s: min(1, max(0, calc((var(--p) - .42) * 2.4)));
+    position: relative; height: 320svh; background: var(--dark); color: var(--cream); }
+  .open-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; justify-items: center; align-content: end; padding: 0 var(--pad); }
+  .open-line { position: absolute; left: 0; right: 0; top: 14svh; display: grid; justify-items: center; gap: .1em; padding: 0 var(--pad); text-align: center; font-family: var(--display); font-weight: 300; line-height: .95; }
+  .ol { display: block; font-size: clamp(2.2rem, 8vw, 7.6rem); letter-spacing: -.04em; white-space: nowrap; opacity: min(1, max(0, calc((var(--s) * 3 - var(--i, 0)) ))); transform: translateY(calc((1 - min(1, max(0, calc(var(--s) * 3 - var(--i, 0))))) * 3rem)); }
+  .ol1 { --i: 0; } .ol2 { --i: 1; font-style: italic; color: var(--sage); } .ol3 { --i: 2; font-size: clamp(3rem, 12vw, 11rem); font-style: italic; color: var(--cream); }
+  .pure { --h: min(58svh, 34rem); position: relative; width: calc(var(--h) * .254); height: var(--h); margin-bottom: 0; transform: translateY(calc(var(--o) * 3svh)); }
+  .pure :global(img) { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; }
+  .pure :global(.pb-body) { clip-path: inset(10.6% 0 0 0); }
+  .pure :global(.pb-cap) { clip-path: inset(0 0 89.4% 0); transform-origin: 20% 100%; transform: translate(calc(var(--o) * 9vw), calc(var(--o) * -26svh)) rotate(calc(var(--o) * 34deg)); will-change: transform; }
+  .glow { position: absolute; left: -90%; right: -90%; top: -14%; height: 40%; background: radial-gradient(closest-side, color-mix(in srgb, var(--sage) 85%, transparent), transparent); filter: blur(18px); opacity: calc(var(--o) * .9); }
+  .puff { position: absolute; left: 50%; top: 10%; width: 1.8rem; height: 1.8rem; margin-left: -.9rem; border-radius: 50%; background: radial-gradient(closest-side, rgb(238 233 193 / .55), transparent); opacity: calc(var(--o) * (1 - var(--o) * .35)); }
+  .puff.p1 { transform: translate(calc(var(--o) * -1.4rem), calc(var(--o) * -14svh)) scale(calc(1 + var(--o) * 1.6)); }
+  .puff.p2 { transform: translate(calc(var(--o) * 1.2rem), calc(var(--o) * -22svh)) scale(calc(.8 + var(--o) * 2)); }
+  .puff.p3 { transform: translate(calc(var(--o) * -.4rem), calc(var(--o) * -30svh)) scale(calc(.6 + var(--o) * 2.4)); }
+  @media (max-width: 700px) { .open-line { top: 11svh; } .pure { --h: min(50svh, 28rem); } }
+  @media (prefers-reduced-motion: reduce) { .open-track { height: auto; --p: 1 !important; } .open-stage { position: relative; min-height: 100svh; } }
+
+  /* ---------- 9. contact ---------- */
+  .contact { position: relative; background: var(--moss); color: var(--cream); }
+  .ct-anchor { position: absolute; left: 0; width: 1px; height: 1px; bottom: calc(100svh - 1px); pointer-events: none; }   /* the "Contact" link lands here: the words are already there */
+  .ct-track { height: 230svh; position: relative; --q: 0; }
+  @media (prefers-reduced-motion: reduce) { .ct-track { --q: 1.15; } }
+  .ct-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; align-content: center; padding: 5rem 0 clamp(8rem, 18vw, 14rem); }
+  .ct-in { display: grid; gap: 1.2rem; -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--q) * 100% - 12%), transparent calc(var(--q) * 100%)); mask-image: linear-gradient(90deg, #000 calc(var(--q) * 100% - 12%), transparent calc(var(--q) * 100%)); }
+  .ct-line { font-size: clamp(2.8rem, 8.6vw, 8.4rem); line-height: .94; letter-spacing: -.045em; font-weight: 300; max-width: 12em; }
+  .ct-line :global(.wink) { color: var(--cream); font-style: italic; }
+  .ct-label { margin-top: clamp(2rem, 5vw, 4rem); color: var(--cream); }
+  .ct-list { display: grid; gap: .9rem; }
+  .ct-list li { font-family: var(--display); font-size: clamp(1.53rem, 3.06vw, 2.72rem); line-height: 1.1; padding-bottom: .9rem; border-bottom: 1px solid rgb(238 233 193 / .5); }
+  .ct-list :global(.ph) { font-size: .9em; }
+  .ct-list :global(.ci) { display: inline-grid; place-items: center; width: 1.9em; height: 1.9em; margin-right: .55em; vertical-align: -.35em; border: 1px solid rgb(238 233 193 / .6); border-radius: 50%; font-size: .62em; }
+  .ct-list :global(a) { text-decoration-thickness: 1px; text-underline-offset: .2em; }
+  .ct-road { position: absolute; left: 0; right: 0; bottom: 0; height: clamp(6rem, 14vw, 10rem); }
+  .end-hills { position: absolute; inset: 0; width: 100%; height: 100%; display: block; fill: var(--dark); }
+  .ct-dash { fill: none; stroke: var(--sage); stroke-width: 2.4; stroke-dasharray: 2 10; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .ct-car { position: absolute; left: 0; top: 0; width: clamp(3.6rem, 6vw, 5.4rem); height: auto; overflow: visible; will-change: transform; transform-origin: 50% 100%; }
+  .ct-car .cb-glass { fill: var(--dark); stroke: var(--cream); stroke-width: 1.5; stroke-linejoin: round; } .ct-car .cb-cap { fill: var(--orange); } .ct-car .cb-label { fill: var(--cream); }
+  .ct-car .cb-line { fill: none; stroke: var(--dark); stroke-width: 2; stroke-linecap: round; } .ct-car .cb-wheel { fill: var(--dark); stroke: var(--cream); stroke-width: 2; } .ct-car .cb-hub { fill: var(--cream); }
+  @media (min-width: 900px) { .ct-in { grid-template-columns: 7fr 5fr; column-gap: 4rem; align-items: end; } .ct-line { grid-row: 1 / 4; } .ct-label { margin-top: 0; } }
+  @media (prefers-reduced-motion: reduce) { .ct-track { height: auto; } .ct-stage { position: relative; height: auto; min-height: 100svh; } .ct-in { -webkit-mask-image: none; mask-image: none; } .ct-anchor { bottom: auto; top: 0; } }
+</style>
+
+<script>
+  // Scroll-driven scenes: the page sets --p (0..1) on a tall track while its sticky stage stays on screen.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tracks = [...document.querySelectorAll<HTMLElement>('[data-cheers], [data-open]')];
+  const progress = (track: HTMLElement, hold = 0.85) => {
+    const r = track.getBoundingClientRect();
+    return Math.min(1, Math.max(0, -r.top / ((r.height - innerHeight) * hold)));
+  };
+  if (reduce) tracks.forEach((t) => t.style.setProperty('--p', '1'));
+  else {
+    const update = () => tracks.forEach((t) => t.style.setProperty('--p', progress(t, t.hasAttribute('data-open') ? 0.8 : 0.82).toFixed(4)));
+    let raf = 0;
+    addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); }, { passive: true });
+    addEventListener('resize', update);
+    update();
+  }
+</script>
+
+<script>
+  // Contact: a bottle on wheels drives from the left edge to the right edge along the hills as the page is scrolled; the words appear behind it (left to right)
+  const ct = document.querySelector<HTMLElement>('[data-ct]');
+  const car = document.querySelector<SVGSVGElement>('[data-ct-car]');
+  const roadEl = document.querySelector<HTMLElement>('.ct-road');
+  const hill = document.querySelector<SVGPathElement>('[data-ct-line]');
+  if (ct && car && roadEl && hill) {
+    const L = hill.getTotalLength();
+    const lenAtX = (x: number) => { let lo = 0, hi = L; for (let i = 0; i < 22; i++) { const m = (lo + hi) / 2; if (hill.getPointAtLength(m).x < x) lo = m; else hi = m; } return hi; };
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const place = (q: number) => {
+      const w = roadEl.clientWidth, h = roadEl.clientHeight, cw = car.getBoundingClientRect().width || 90;
+      const vx = Math.min(1440, Math.max(0, q * 1440));
+      const a = hill.getPointAtLength(lenAtX(Math.max(0, vx - 12))), b = hill.getPointAtLength(lenAtX(Math.min(1440, vx + 12))), pt = hill.getPointAtLength(lenAtX(vx));
+      const sx = w / 1440, sy = h / 120;
+      const ang = Math.max(-14, Math.min(14, (Math.atan2((b.y - a.y) * sy, (b.x - a.x) * sx) * 180) / Math.PI));
+      const px = pt.x * sx - cw / 2, py = pt.y * sy - car.getBoundingClientRect().height + 4;
+      car.style.transform = `translate(${px}px, ${py}px) rotate(${ang}deg)`;
+      ct.style.setProperty('--q', String(Math.min(1.15, Math.max(0, (px + cw * 0.5) / w)).toFixed(4)));
+    };
+    const update = () => {
+      const r = ct.getBoundingClientRect();
+      const p = still ? 1 : Math.min(1, Math.max(0, -r.top / ((r.height - innerHeight) * 0.78)));
+      place(-0.06 + p * 1.12);
+      if (p >= 1) ct.style.setProperty('--q', '1.15');
+    };
+    let raf = 0;
+    addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); }, { passive: true });
+    addEventListener('resize', update);
+    update();
+  }
+</script>

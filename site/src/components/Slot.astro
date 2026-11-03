@@ -1,0 +1,17 @@
+---
+// An empty place for a photo or video, waiting for Cam Anh's picture.
+// `tag` is a temporary label (page.number) so she can say "put X in 3.2". Delete the prop to remove the label.
+interface Props { tag?: string; a?: string; kind?: 'photo' | 'video'; class?: string; round?: boolean; tone?: 'blush' | 'cream' | 'lime' | 'pink' | 'plum' }
+const { tag, a = '4 / 3', kind = 'photo', class: cls, round = false, tone = 'blush' } = Astro.props;
+---
+<div class={`slot t-${tone}${round ? ' round' : ''}${cls ? ' ' + cls : ''}`} style={`aspect-ratio:${a}`} aria-hidden="true">
+  {tag && <span class="tag">{tag}{kind === 'video' ? ' · video' : ''}</span>}
+</div>
+
+<style>
+  .slot { position: relative; width: 100%; overflow: hidden; background: var(--bg); color: var(--ink); --bg: var(--mist); }
+  .slot::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(135deg, transparent 0 11px, rgb(58 35 10 / .07) 11px 12px); }
+  .t-cream { --bg: var(--paper-2); } .t-lime { --bg: var(--sage); } .t-pink { --bg: var(--orange); color: var(--cream); } .t-plum { --bg: var(--moss); color: var(--cream); }
+  .round { border-radius: 50%; }
+  .tag { position: absolute; left: .7rem; top: .6rem; font-family: var(--sans); font-weight: 500; font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; opacity: .7; }
+</style>

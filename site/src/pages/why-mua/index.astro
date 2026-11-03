@@ -1,0 +1,8 @@
+---
+import Base from '../../layouts/Base.astro';
+import WhyMua from '../../components/WhyMua.astro';
+import { nav } from '../../lib/data';
+---
+<Base current="mua" title={nav.mua.label}>
+  <main><WhyMua /></main>
+</Base>

@@ -1,0 +1,10 @@
+---
+import Base from '../layouts/Base.astro';
+import { cover } from '../lib/data';
+---
+<Base>
+  <main class="wrap" style="padding:20vh 0;min-height:70vh">
+    <p style="font-family:var(--display);font-weight:300;font-size:clamp(4rem,16vw,9rem);color:var(--accent);line-height:.9">404</p>
+    <p><a href="/">{cover.hero}</a></p>
+  </main>
+</Base>

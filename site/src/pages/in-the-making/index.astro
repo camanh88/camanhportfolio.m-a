@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import Ch01 from '../../components/Ch01.astro';
+import Ch02 from '../../components/Ch02.astro';
+import Ch03 from '../../components/Ch03.astro';
+import { nav } from '../../lib/data';
+---
+<Base current="making" title={nav.making.label}>
+  <main>
+    <Ch01 />
+    <Ch02 />
+    <Ch03 />
+  </main>
+</Base>

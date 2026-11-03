@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.astro/
+tmp-img/
+.DS_Store
+*.HEIC
+*.heic
+*.log
+# heavy originals stay out of the repo
+../02/
+../04/
+review-note.md

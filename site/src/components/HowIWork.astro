@@ -1,0 +1,32 @@
+---
+import { intro } from '../lib/data';
+import { inline } from '../lib/md';
+---
+<section id="how" class="how" aria-labelledby="how-title">
+  <div class="wrap grid">
+    <h2 id="how-title" class="title reveal">{intro.how.title}</h2>
+    <div class="items">
+      {intro.how.items.map((it, i) => (
+        <article class="item reveal" style={`--c:${i ? 'var(--orange)' : 'var(--moss)'}`}>
+          <h3 class="lead">{it.lead.replace(/:$/, '')}</h3>
+          <p class="text" set:html={inline(it.rest)} />
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .how { padding: var(--section) 0; }
+  .grid { display: grid; gap: clamp(3rem, 7vw, 5rem); }
+  .title { font-size: clamp(2.6rem, 8vw, 7rem); line-height: .95; letter-spacing: -.03em; }
+  .items { display: grid; }
+  .item { padding: 2.25rem 0; border-top: 2px solid var(--c); display: grid; gap: 1.1rem; }
+  .item:last-child { border-bottom: 2px solid var(--c); }
+  .lead { color: var(--c); font-size: clamp(1.8rem, 3vw, 2.6rem); line-height: 1.05; letter-spacing: -.015em; font-weight: 400; }
+  .text { max-width: 34rem; color: var(--ink); }
+  @media (min-width: 900px) {
+    .grid { grid-template-columns: 5fr 7fr; column-gap: 4rem; align-items: start; }
+    .item { grid-template-columns: 1fr 1.6fr; column-gap: 3rem; padding: 3rem 0; }
+  }
+</style>

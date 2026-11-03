@@ -1,0 +1,29 @@
+:root {
+  /* theme colours: "muted monarch" palette (Color & Theme.jpg) plus one deeper green, Moss */
+  --sage: #8DA28C;      /* quiet backgrounds, borders, light details; too pale for text */
+  --orange: #A4530C;    /* burnt orange: accents, section numbers, links */
+  --cream: #EEE9C1;     /* main background */
+  --brown: #3A230A;     /* main text, dark blocks */
+  --moss: #4E6B3F;      /* accent text, buttons, sub-headings (4.9:1 on cream) */
+  /* tints made from the five colours */
+  --paper: var(--cream);
+  --paper-2: color-mix(in srgb, var(--cream) 55%, #fff);   /* a lighter paper for alternating bands, cards, headers */
+  --mist: color-mix(in srgb, var(--sage) 45%, var(--cream)); /* soft text and borders on dark blocks, photo frames */
+  --ink: var(--brown);
+  --ink-soft: color-mix(in srgb, var(--brown) 78%, var(--cream));
+  --dark: var(--brown);
+  --accent: var(--orange);
+  /* placeholder [ ... ] */
+  --ph-bg: #F8DDA6;
+  --ph-ink: #7A3A00;
+
+  --display: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --hand: 'Mynerve', cursive; /* only for {{vi: ...}} notes */
+  --script: 'Allura', 'Mynerve', cursive; /* signature hand */
+
+  --gutter: clamp(1.25rem, 5vw, 4rem);
+  --wide: 84rem;
+  --section: clamp(6rem, 14vw, 13rem);
+  --ease: cubic-bezier(.22, .7, .2, 1);
+}

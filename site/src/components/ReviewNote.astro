@@ -1,0 +1,244 @@
+---
+// TEMPORARY review tool: a blank sticky note that floats in a corner of every page, so
+// Cam Anh can read the site full-screen and type her comments as she goes.
+// It exists only while reviewing: it renders only when PUBLIC_REVIEW=1 (and only if <ReviewNote /> is in Base.astro; it was taken out on Oct 29)
+// and never in a normal `npm run build`. It holds no site copy; the only text on it is what she types.
+//
+// TO REMOVE WHEN REVIEW IS DONE: delete the <ReviewNote /> line (and its import) in src/layouts/Base.astro,
+// then delete this file. Nothing else depends on it.
+const on = import.meta.env.PUBLIC_REVIEW === '1';   // off by default since Oct 29: to bring the note back, add <ReviewNote /> to Base.astro and run with PUBLIC_REVIEW=1
+---
+{on && (
+  <>
+    <aside id="rv" class="rv" data-state="closed" aria-label="Review note">
+      <button type="button" class="rv-tab" aria-label="Open review note" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a1.8 1.8 0 012.5 0l.5.5a1.8 1.8 0 010 2.5L8 19l-4 1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="rv-note">
+        <span class="rv-size" aria-label="Drag to resize the note" title="Drag to resize">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 20L20 4M4 13L13 4M4 6l6-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" transform="translate(0 0)"/></svg>
+        </span>
+        <div class="rv-head">
+          <span class="rv-grip" aria-hidden="true"></span>
+          <button type="button" class="rv-btn" data-act="copy" aria-label="Copy note" title="Copy">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 15V5.5A1.5 1.5 0 016.5 4H15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+          <button type="button" class="rv-btn" data-act="clear" aria-label="Clear note" title="Clear">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button type="button" class="rv-btn" data-act="max" aria-label="Enlarge or shrink note" title="Bigger / smaller">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button type="button" class="rv-btn" data-act="min" aria-label="Minimise note" title="Minimise">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="rv-fmt" role="toolbar" aria-label="Text style">
+          <button type="button" class="rv-f" data-fmt="bold" aria-label="Bold" aria-pressed="false" title="Bold (Ctrl/Cmd+B)"><b>B</b></button>
+          <button type="button" class="rv-f" data-fmt="italic" aria-label="Italic" aria-pressed="false" title="Italic (Ctrl/Cmd+I)"><i>I</i></button>
+          <button type="button" class="rv-f" data-fmt="underline" aria-label="Underline" aria-pressed="false" title="Underline (Ctrl/Cmd+U)"><u>U</u></button>
+        </div>
+        <div class="rv-text" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false" aria-label="Review note"></div>
+      </div>
+    </aside>
+
+    <style is:inline>
+      .rv { --rv-paper: #FFF1A6; --rv-edge: #E9D676; position: fixed; z-index: 9000; right: 1rem; bottom: 1rem; font-family: var(--sans, sans-serif); color: #141312; }
+      .rv[data-state="closed"] .rv-note { display: none; }
+      .rv[data-state="open"] .rv-tab { display: none; }
+      .rv-tab { appearance: none; border: 0; cursor: pointer; width: 2.75rem; height: 2.75rem; display: grid; place-items: center; color: #141312; opacity: .82; background: linear-gradient(225deg, var(--rv-edge) 0 .8rem, var(--rv-paper) .8rem); box-shadow: 0 1px 6px rgb(20 19 18 / .22); transition: opacity .25s; }
+      .rv-tab:hover, .rv-tab:focus-visible { opacity: 1; }
+      .rv-note { width: 15rem; height: 11.5rem; min-width: 11rem; min-height: 8rem; max-width: calc(100vw - 1rem); max-height: calc(100svh - 1rem); min-width: 11rem; display: flex; flex-direction: column; background: var(--rv-paper); box-shadow: 0 2px 14px rgb(20 19 18 / .26); position: relative; overflow: hidden; }
+      .rv-size { position: absolute; z-index: 2; left: 0; top: 0; width: 1.6rem; height: 2rem; display: grid; place-items: center; cursor: nwse-resize; touch-action: none; color: #141312; opacity: .55; }
+      .rv-size:hover { opacity: 1; }
+      .rv-head { display: flex; align-items: center; gap: .1rem; padding: 0 .15rem 0 1.7rem; height: 2rem; flex: none; background: var(--rv-edge); cursor: grab; touch-action: none; }
+      .rv-head:active { cursor: grabbing; }
+      .rv-grip { flex: 1; height: 100%; }
+      .rv-btn { appearance: none; border: 0; background: transparent; color: #141312; width: 2rem; height: 2rem; display: grid; place-items: center; cursor: pointer; opacity: .7; }
+      .rv-btn:hover, .rv-btn:focus-visible { opacity: 1; }
+      .rv-fmt { display: flex; gap: .1rem; padding: .15rem .5rem 0; flex: none; }
+      .rv-f { appearance: none; border: 0; background: transparent; color: #141312; width: 1.7rem; height: 1.6rem; display: grid; place-items: center; cursor: pointer; font: 400 .95rem/1 Georgia, serif; border-radius: 3px; opacity: .7; }
+      .rv-f:hover, .rv-f:focus-visible { opacity: 1; background: rgb(20 19 18 / .08); }
+      .rv-f[aria-pressed="true"] { opacity: 1; background: rgb(20 19 18 / .16); }
+      .rv-text { flex: 1; width: 100%; min-height: 0; overflow-y: auto; border: 0; outline: none; background: transparent; padding: .35rem .75rem .75rem; font: 400 .95rem/1.5 var(--sans, sans-serif); color: #141312; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .rv-text b, .rv-text strong { font-weight: 700; } .rv-text i, .rv-text em { font-style: italic; } .rv-text u { text-decoration: underline; }
+      .rv :focus-visible { outline: 2px solid #141312; outline-offset: -2px; }
+      @media (prefers-reduced-motion: reduce) { .rv-tab { transition: none; } }
+      @media print { .rv { display: none; } }
+    </style>
+
+    <script is:inline>
+      (function () {
+        var root = document.getElementById('rv');
+        if (!root) return;
+        var KEY = 'port26-review-note';
+        var note = root.querySelector('.rv-note');
+        var tab = root.querySelector('.rv-tab');
+        var head = root.querySelector('.rv-head');
+        var area = root.querySelector('.rv-text');
+        var st = { text: '', html: '', open: false, x: null, y: null, w: null, h: null };
+        try { var raw = localStorage.getItem(KEY); if (raw) st = Object.assign(st, JSON.parse(raw)); } catch (e) {}
+        function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+        function place() {
+          if (st.w) note.style.width = st.w + 'px';
+          if (st.h) note.style.height = st.h + 'px';
+          if (st.x == null) { root.style.left = 'auto'; root.style.top = 'auto'; root.style.right = '1rem'; root.style.bottom = '1rem'; return; }
+          var box = root.getBoundingClientRect();
+          var x = Math.min(Math.max(0, st.x), Math.max(0, innerWidth - box.width));
+          var y = Math.min(Math.max(0, st.y), Math.max(0, innerHeight - box.height));
+          root.style.right = 'auto'; root.style.bottom = 'auto'; root.style.left = x + 'px'; root.style.top = y + 'px';
+        }
+        function setOpen(open) {
+          st.open = open;
+          root.dataset.state = open ? 'open' : 'closed';
+          tab.setAttribute('aria-expanded', String(open));
+          place(); save();
+          if (open) area.focus({ preventScroll: true });
+        }
+
+        // The note keeps its text as simple HTML (bold, italic, underline, line breaks only). Notes saved before formatting existed
+        // were plain text: they are converted on load, so nothing is lost.
+        var OK = { B: 1, STRONG: 1, I: 1, EM: 1, U: 1, BR: 1, DIV: 1, P: 1 };
+        function clean(html) {
+          var tpl = document.createElement('template'); tpl.innerHTML = html;
+          (function walk(n) {
+            Array.prototype.slice.call(n.childNodes).forEach(function (c) {
+              if (c.nodeType === 1) {
+                walk(c);
+                if (!OK[c.tagName]) { while (c.firstChild) n.insertBefore(c.firstChild, c); n.removeChild(c); }
+                else Array.prototype.slice.call(c.attributes).forEach(function (a) { c.removeAttribute(a.name); });
+              } else if (c.nodeType !== 3) n.removeChild(c);
+            });
+          })(tpl.content);
+          return tpl.innerHTML;
+        }
+        function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
+        // plain text with light markup (so it can be pasted into a chat): **bold**, *italic*, <u>underline</u>
+        function toMarkdown(node) {
+          var out = '';
+          node.childNodes.forEach(function (c) {
+            if (c.nodeType === 3) { out += c.nodeValue; return; }
+            if (c.nodeType !== 1) return;
+            var inner = toMarkdown(c), t = c.tagName;
+            if (t === 'BR') out += '\n';
+            else if (t === 'B' || t === 'STRONG') out += inner.trim() ? '**' + inner + '**' : inner;
+            else if (t === 'I' || t === 'EM') out += inner.trim() ? '*' + inner + '*' : inner;
+            else if (t === 'U') out += inner.trim() ? '<u>' + inner + '</u>' : inner;
+            else if (t === 'DIV' || t === 'P') out += (out && !/\n$/.test(out) ? '\n' : '') + inner;
+            else out += inner;
+          });
+          return out;
+        }
+        // a copy of the note goes to site/review-note.md (dev server only), so Claude can read it
+        var pushTimer = 0;
+        function push() {
+          clearTimeout(pushTimer);
+          pushTimer = setTimeout(function () {
+            var md = toMarkdown(area).replace(/\n{3,}/g, '\n\n').trim();
+            try { fetch('/__review-note', { method: 'POST', body: JSON.stringify({ page: location.pathname, text: md }), keepalive: true }).catch(function () {}); } catch (e) {}
+          }, 500);
+        }
+        function persist() { st.html = area.innerHTML; st.text = area.innerText; save(); push(); }
+        area.innerHTML = clean(st.html || esc(st.text || ''));
+        setOpen(!!st.open);
+        push();
+        try { document.execCommand('styleWithCSS', false, false); } catch (e) {}
+
+        area.addEventListener('input', persist);
+        // pasted text is always plain (no foreign styles); use the buttons to format
+        area.addEventListener('paste', function (e) { e.preventDefault(); var t = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, t); });
+        // text style buttons: B / I / U (the keyboard shortcuts Ctrl/Cmd+B, I, U also work)
+        var fmts = root.querySelectorAll('.rv-f');
+        function mark() { fmts.forEach(function (b) { var on = false; try { on = document.queryCommandState(b.dataset.fmt); } catch (e) {} b.setAttribute('aria-pressed', String(on && document.activeElement === area)); }); }
+        fmts.forEach(function (b) {
+          b.addEventListener('mousedown', function (e) { e.preventDefault(); });
+          b.addEventListener('click', function () { area.focus(); document.execCommand(b.dataset.fmt, false, null); persist(); mark(); });
+        });
+        document.addEventListener('selectionchange', function () { if (root.contains(document.activeElement)) mark(); });
+        tab.addEventListener('click', function () { setOpen(true); });
+        // Esc inside the note only minimises the note (it must not also close a dialog behind it)
+        root.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setOpen(false); tab.focus(); } });
+        // clicks on the note must not reach a dialog's "click outside to close"
+        root.addEventListener('click', function (e) { e.stopPropagation(); });
+
+        // A modal <dialog> (side note, gallery, skills) makes everything outside it inert.
+        // While one is open the note moves inside it, so it stays usable and on top.
+        function sync() {
+          var dlg = document.querySelector('dialog[open]:modal');
+          var home = dlg || document.body;
+          if (root.parentNode !== home) { home.appendChild(root); if (st.open) place(); }
+        }
+        new MutationObserver(sync).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
+
+        root.addEventListener('click', function (e) {
+          var b = e.target.closest('.rv-btn');
+          if (!b) return;
+          var act = b.dataset.act;
+          if (act === 'min') { setOpen(false); tab.focus(); }
+          else if (act === 'clear') { if (!area.innerText.trim() || confirm('Clear the note?')) { area.innerHTML = ''; persist(); area.focus(); } }
+          else if (act === 'copy') {
+            var done = function () { b.style.opacity = '1'; setTimeout(function () { b.style.opacity = ''; }, 700); };
+            var md = toMarkdown(area).replace(/\n{3,}/g, '\n\n').trim();
+            var fallback = function () { var r = document.createRange(); r.selectNodeContents(area); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); document.execCommand('copy'); sel.removeAllRanges(); done(); };
+            if (navigator.clipboard && window.ClipboardItem) navigator.clipboard.write([new ClipboardItem({ 'text/plain': new Blob([md], { type: 'text/plain' }), 'text/html': new Blob([area.innerHTML], { type: 'text/html' }) })]).then(done, fallback);
+            else if (navigator.clipboard) navigator.clipboard.writeText(md).then(done, fallback);
+            else fallback();
+          }
+        });
+
+        // drag by the top strip
+        var drag = null;
+        head.addEventListener('pointerdown', function (e) {
+          if (e.target.closest('.rv-btn')) return;
+          var r = root.getBoundingClientRect();
+          drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+          head.setPointerCapture(e.pointerId);
+        });
+        head.addEventListener('pointermove', function (e) {
+          if (!drag) return;
+          var r = root.getBoundingClientRect();
+          st.x = Math.min(Math.max(0, e.clientX - drag.dx), Math.max(0, innerWidth - r.width));
+          st.y = Math.min(Math.max(0, e.clientY - drag.dy), Math.max(0, innerHeight - r.height));
+          root.style.right = 'auto'; root.style.bottom = 'auto'; root.style.left = st.x + 'px'; root.style.top = st.y + 'px';
+        });
+        function endDrag() { if (drag) { drag = null; save(); } }
+        head.addEventListener('pointerup', endDrag);
+        head.addEventListener('pointercancel', endDrag);
+
+        // resize: drag the top-left corner (the note stays anchored at its bottom-right corner)
+        var rs = root.querySelector('.rv-size'), sz = null;
+        function setBox(right, bottom, w, h) {
+          w = Math.min(Math.max(176, w), innerWidth - 8); h = Math.min(Math.max(128, h), innerHeight - 8);
+          var l = Math.min(Math.max(0, right - w), innerWidth - w), t = Math.min(Math.max(0, bottom - h), innerHeight - h);
+          note.style.width = w + 'px'; note.style.height = h + 'px';
+          root.style.right = 'auto'; root.style.bottom = 'auto'; root.style.left = l + 'px'; root.style.top = t + 'px';
+          st.x = l; st.y = t; st.w = Math.round(w); st.h = Math.round(h);
+        }
+        rs.addEventListener('pointerdown', function (e) {
+          var r = root.getBoundingClientRect();
+          sz = { right: r.right, bottom: r.bottom };
+          rs.setPointerCapture(e.pointerId); e.preventDefault();
+        });
+        rs.addEventListener('pointermove', function (e) { if (sz) setBox(sz.right, sz.bottom, sz.right - e.clientX, sz.bottom - e.clientY); });
+        function endSize() { if (sz) { sz = null; st.big = false; save(); } }
+        rs.addEventListener('pointerup', endSize);
+        rs.addEventListener('pointercancel', endSize);
+        // one-click bigger / back to the previous size
+        root.addEventListener('click', function (e) {
+          if (!e.target.closest('[data-act=max]')) return;
+          var r = root.getBoundingClientRect();
+          if (st.big && st.pw) { setBox(r.right, r.bottom, st.pw, st.ph); st.big = false; }
+          else { st.pw = r.width; st.ph = r.height; setBox(r.right, r.bottom, Math.min(480, innerWidth - 16), Math.min(innerHeight * 0.7, 560)); st.big = true; }
+          save();
+        });
+        addEventListener('resize', place);
+        // keep two open tabs of the site in step
+        addEventListener('storage', function (e) {
+          if (e.key !== KEY || !e.newValue) return;
+          try { var n = JSON.parse(e.newValue); if (n.html !== area.innerHTML && document.activeElement !== area) { area.innerHTML = clean(n.html || esc(n.text || '')); st.html = area.innerHTML; st.text = n.text || ''; } } catch (err) {}
+        });
+      })();
+    </script>
+  </>
+)}

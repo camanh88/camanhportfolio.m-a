@@ -1,0 +1,8 @@
+---
+import Base from '../../layouts/Base.astro';
+import OffMenu from '../../components/OffMenu.astro';
+import { nav } from '../../lib/data';
+---
+<Base current="menu" title={nav.menu.label}>
+  <main><OffMenu /></main>
+</Base>

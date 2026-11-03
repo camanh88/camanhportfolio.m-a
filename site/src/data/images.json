@@ -2044,5 +2044,34 @@
   "widths": [
    227
   ]
+ },
+ "mua-4-1": {
+  "alt": "A heap of fresh green cốm flakes on banana leaves.",
+  "width": 800,
+  "height": 1000,
+  "widths": [
+   480,
+   800
+  ]
+ },
+ "mua-4-2": {
+  "alt": "Chopsticks lifting a stretchy, glossy green cốm xào from a tray, with flecks of gold leaf, against a dark background.",
+  "width": 1200,
+  "height": 1500,
+  "widths": [
+   480,
+   960,
+   1200
+  ]
+ },
+ "mua-4-3": {
+  "alt": "Three photos joined side by side: a sunlit rice field with white flags, a gloved hand in raw rice grains, and two brewers lifting a sack of rice beside a steel tank.",
+  "width": 2400,
+  "height": 1350,
+  "widths": [
+   960,
+   1600,
+   2400
+  ]
  }
 }

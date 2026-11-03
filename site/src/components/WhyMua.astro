@@ -1,6 +1,5 @@
 ---
 import Photo from './Photo.astro';
-import Slot from './Slot.astro';
 import { ch05, ui } from '../lib/data';
 import { inline, sentences, type Block } from '../lib/md';
 
@@ -99,7 +98,7 @@ const contactRow = (t: string) => {
     {panels.map((p, i) => (
       <div class={`pn pn${i + 1}`}>
         <div class="pn-pic reveal">
-          <Slot tag={`4.${i + 1} · ${p.w}`} a={i === 0 ? '4 / 5' : '1 / 1'} tone={i === 0 ? 'lime' : 'blush'} />
+          <Photo id={`mua-4-${i + 1}`} sizes="(min-width: 900px) 34rem, 90vw" />
         </div>
         <div class="pn-txt wrap-s">
           <p class="pn-n reveal" aria-hidden="true">{p.n}</p>
@@ -126,7 +125,7 @@ const contactRow = (t: string) => {
         <p class="em-you reveal" set:html={em(embrace.ps[0] ?? '')} />
         <p class="em-me reveal" set:html={em(embrace.ps[1] ?? '')} />
       </div>
-      <div class="em-pic reveal"><Slot tag="4.3 · Vietnamese ingredients" a="16 / 9" tone="lime" /></div>
+      <div class="em-pic reveal"><Photo id="mua-4-3" sizes="(min-width: 1400px) 88rem, 92vw" /></div>
     </div>
   </section>
 
@@ -238,6 +237,7 @@ const contactRow = (t: string) => {
   .pn1 { background: var(--paper-2); }
   .pn2 { background: var(--paper); }
   .pn-pic { max-width: 34rem; width: 100%; }
+  .pn-pic :global(img), .em-pic :global(img) { display: block; width: 100%; height: auto; }
   .pn-txt { display: grid; gap: 1.2rem; align-content: center; max-width: 36rem; }
   .pn-n { font-family: var(--sans); font-weight: 400; font-size: clamp(6rem, 17vw, 13rem); line-height: .8; color: var(--sage); letter-spacing: -.05em; }
   .pn-w { font-size: clamp(2.8rem, 7vw, 6.4rem); line-height: .9; letter-spacing: -.04em; font-style: italic; color: var(--moss); margin-bottom: .6rem; }

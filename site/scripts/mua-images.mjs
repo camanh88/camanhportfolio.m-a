@@ -50,3 +50,35 @@ for (const [id, [file, alt]] of Object.entries(items)) {
   console.log(id, m.width, m.height, widths.join('/'));
 }
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 1) + '\n');
+
+// ---- section 04 photos: 4.1 and 4.2 cropped to 4:5, 4.3 = three squares joined edge to edge into one 16:9 picture ----
+const manifest2 = JSON.parse(readFileSync(manifestPath, 'utf8'));
+const put = async (id, buf, alt, widths) => {
+  const m = await sharp(buf).metadata();
+  const ws = widths.filter((w) => w < m.width); ws.push(m.width);
+  for (const w of ws) await sharp(buf).resize({ width: w, withoutEnlargement: true }).webp({ quality: 80 }).toFile(path.join(OUT, `${id}-${w}.webp`));
+  manifest2[id] = { alt, width: m.width, height: m.height, widths: ws };
+  console.log(id, m.width, m.height, ws.join('/'));
+};
+const crop45 = async (file, y, w = 1200) => {
+  const img = sharp(path.join(ASSETS, file)).rotate();
+  const m = await img.metadata();
+  let cw = m.width, ch = Math.round(m.width * 5 / 4);
+  if (ch > m.height) { ch = m.height; cw = Math.round(m.height * 4 / 5); }
+  return sharp(await img.extract({ left: Math.round((m.width - cw) / 2), top: Math.round((m.height - ch) * y), width: cw, height: ch }).resize({ width: w }).toBuffer());
+};
+await put('mua-4-1', await (await crop45('4.1.jpg', 0.5, 800)).toBuffer(), 'A heap of fresh green cốm flakes on banana leaves.', [480]);
+await put('mua-4-2', await (await crop45('4.2.jpg', 0.72, 1200)).toBuffer(), 'Chopsticks lifting a stretchy, glossy green cốm xào from a tray, with flecks of gold leaf, against a dark background.', [480, 960]);
+const W3 = 2400, H3 = 1350, T = W3 / 3;
+const tiles = [['4.3.1.jpg', 0.3], ['4.3.2.jpg', 0.5], ['4.3.3.jpg', 0.55]];
+const comps = [];
+for (const [i, [f, cx]] of tiles.entries()) {
+  const img = sharp(path.join(ASSETS, f));
+  const m = await img.metadata();
+  const sc = H3 / m.height, rw = Math.round(m.width * sc);
+  const left = Math.min(rw - T, Math.max(0, Math.round(rw * cx - T / 2)));
+  comps.push({ input: await img.resize({ height: H3 }).extract({ left, top: 0, width: T, height: H3 }).toBuffer(), left: i * T, top: 0 });
+}
+const strip = await sharp({ create: { width: W3, height: H3, channels: 3, background: '#ffffff' } }).composite(comps).png().toBuffer();
+await put('mua-4-3', strip, 'Three photos joined side by side: a sunlit rice field with white flags, a gloved hand in raw rice grains, and two brewers lifting a sack of rice beside a steel tank.', [960, 1600]);
+writeFileSync(manifestPath, JSON.stringify(manifest2, null, 1) + '\n');

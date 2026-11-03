@@ -589,7 +589,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   .seasonal :global(.sb2) { left: 18.7%; top: 35%; width: 23%; height: 65%; z-index: 1; }
   .seasonal :global(.sb3) { left: 50.6%; top: 0; width: 30.8%; height: 84.3%; }
   .seasonal :global(.sb4) { left: 76.2%; top: 33.5%; width: 23.8%; height: 65.4%; z-index: 1; }
-  .seasonal-cap { font-family: var(--sans); font-size: .82rem; line-height: 1.5; color: var(--ink-soft); max-width: 40em; }
+  .seasonal-cap { margin-top: calc(.7rem - clamp(2rem, 4vw, 3.5rem)); font-family: var(--sans); font-size: .82rem; line-height: 1.5; color: var(--ink-soft); max-width: 40em; }
   .bagtext .plain { font-family: var(--display); font-style: italic; font-size: clamp(1.4rem, 2.2vw, 2rem); }
   .bagtext .aside { font-size: .98rem; color: var(--ink-soft); }
   .bagtext .big { font-family: var(--display); font-size: clamp(1.4rem, 2.1vw, 1.9rem); line-height: 1.25; color: var(--moss); }
@@ -866,7 +866,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   .p9-text { display: grid; gap: 1.4rem; max-width: 40rem; font-family: var(--display); font-weight: 300; font-size: clamp(1.25rem, 1.9vw, 1.6rem); line-height: 1.4; }
   .p9-text .a { font-size: clamp(1.7rem, 3vw, 2.6rem); line-height: 1.2; }
   /* the three paragraphs turn up one after another when the page is reached (script below) */
-  :global(.js) .p9-text .p9-in-p { opacity: 0; transform: translateY(1.4rem); transition: opacity 1.2s var(--ease), transform 1.2s var(--ease); }
+  :global(.js) .p9-text .p9-in-p { opacity: 0; transform: translateY(1.4rem); transition: opacity .8s var(--ease), transform .8s var(--ease); }
   :global(.js) .p9-text .p9-in-p.on { opacity: 1; transform: none; }
   @media (prefers-reduced-motion: reduce) { :global(.js) .p9-text .p9-in-p { opacity: 1; transform: none; transition: none; } }
   .p9-text .aside { font-style: italic; color: var(--mist); font-size: 1.05em; }
@@ -915,7 +915,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     const p9io = new IntersectionObserver((es) => {
       if (!es.some((e) => e.isIntersecting)) return;
       p9io.disconnect();
-      p9ps.forEach((el, i) => setTimeout(() => el.classList.add('on'), quick ? 0 : i * 2200));
+      p9ps.forEach((el, i) => setTimeout(() => el.classList.add('on'), quick ? 0 : i * 900));
     }, { threshold: 0.35 });
     p9io.observe(document.querySelector('#ch-02 .p9-text')!);
   }

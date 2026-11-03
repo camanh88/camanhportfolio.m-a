@@ -417,7 +417,7 @@ const index = [
   /* reveal helpers: the photos of 01 turn up one after another; the closing lines write themselves in turn */
   :global(.js) .soc-collage .rvl { opacity: 0; transform: translateY(1.8rem) scale(.96); transition: opacity .9s var(--ease), transform .9s var(--ease); }
   :global(.js) .soc-collage .rvl.on { opacity: 1; transform: none; }
-  :global(.js) .close-in .wr-in { opacity: 0; transform: translateY(1.4rem); transition: opacity 1.3s var(--ease), transform 1.3s var(--ease); }
+  :global(.js) .close-in .wr-in { opacity: 0; transform: translateY(1.4rem); transition: opacity .8s var(--ease), transform .8s var(--ease); }
   :global(.js) .close-in .wr-in.on { opacity: 1; transform: none; }
   @media (prefers-reduced-motion: reduce) { :global(.js) .soc-collage .rvl, :global(.js) .close-in .wr-in { opacity: 1; transform: none; transition: none; } }
   /* 02 In the café (Cam Anh's layout R6): the spread of the menu is the background; everything sits on it in her positions (percent of the stage, wide screens) */
@@ -558,7 +558,7 @@ const index = [
     const cio = new IntersectionObserver((es) => {
       if (!es.some((e) => e.isIntersecting)) return;
       cio.disconnect();
-      lines.forEach((el, i) => setTimeout(() => el.classList.add('on'), still ? 0 : (i === 0 ? 0 : 1500)));   // "It’s not just…" first; "Here, a customer…" and "And it showed me…" together
+      lines.forEach((el, i) => setTimeout(() => el.classList.add('on'), still ? 0 : (i === 0 ? 0 : 600)));   // "It’s not just…" first; "Here, a customer…" and "And it showed me…" together
     }, { threshold: 0.35 });
     cio.observe(document.querySelector('#k-mono .close-in')!);
   }

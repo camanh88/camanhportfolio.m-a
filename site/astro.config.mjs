@@ -38,7 +38,7 @@ const contentWatch = {
 };
 
 export default defineConfig({
-  site: 'https://mua-placeholder.example',
+  site: 'https://mua.camanhportfolio.online',
   output: 'static',
   devToolbar: { enabled: false },
   vite: { plugins: [reviewNote, contentWatch] },

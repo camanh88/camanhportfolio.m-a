@@ -137,6 +137,7 @@ const desc = `${textOf(cover.hero)} ${textOf(cover.sub)}`;
         {p.end && p.images.map((id) => <figure class="sp-fig"><button type="button" class="sp-zoom" data-lb-group={`sp-${p.slug}`} aria-label={ui.expand}><Photo id={id} sizes="(min-width: 760px) 32rem, 92vw" loading="eager" /></button></figure>)}
       </template>
     ))}
+    {!import.meta.env.DEV && <script is:inline type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "bf9cd855e6a7409bb2778a0d55da55a7"}'></script>}   <!-- Cloudflare Web Analytics: only in the real build, not in `npm run dev` -->
   </body>
 </html>
 
